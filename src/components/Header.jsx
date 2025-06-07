@@ -11,7 +11,7 @@ const Header = () => {
   return (
     <header className="w-full bg-white shadow-md px-6 py-4 flex items-center justify-between z-10">
       {/* Left: App Name */}
-      <h1 className="text-xl font-bold text-gray-800">MyApp</h1>
+      <h1 className="text-xl font-bold text-gray-800">AbsenGo</h1>
 
         {/* Center: Search Bar */}
       <div className="flex-1 ml-64"> {/* 👈 offset the search bar by sidebar width */}

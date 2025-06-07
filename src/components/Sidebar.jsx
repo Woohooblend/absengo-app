@@ -13,8 +13,8 @@ const Sidebar = () => {
           <Link to="/" className="block py-2 px-4 rounded hover:bg-gray-700">
             Dashboard
           </Link>
-          <Link to="/settings" className="block py-2 px-4 rounded hover:bg-gray-700">
-            Settings
+          <Link to="/verification" className="block py-2 px-4 rounded hover:bg-gray-700">
+            Verification
           </Link>
         </nav>
       </aside>
