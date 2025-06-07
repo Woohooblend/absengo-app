@@ -21,8 +21,8 @@ const Verification = () => {
           </nav>
 
           {/* Page content */}
-          <h2 className="text-2xl font-semibold mb-4">Check-in & Check-out</h2>
-          <p>AbsenGo check-in and check-out</p>
+          <h2 className="text-2xl font-semibold mb-4">AbsenGo Verification</h2>
+          <p>AbsenGo Wifi and GPS Verification</p>
         </div>
       </div>
     </div>
