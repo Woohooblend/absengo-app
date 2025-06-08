@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import Dashboard from "../pages/dashboard";
 import Login from "../pages/auth/Login";
 import Verification from "../pages/verification";
+import CheckinCheckout from "../pages/checkin-checkout";
 import ProtectedRoute from "./ProtectedRoute";
 
 function App() {
@@ -22,6 +23,14 @@ function App() {
         element={
           <ProtectedRoute>
             <Verification />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/checkin-checkout"
+        element={
+          <ProtectedRoute>
+            <CheckinCheckout />
           </ProtectedRoute>
         }
       />

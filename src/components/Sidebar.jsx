@@ -16,6 +16,9 @@ const Sidebar = () => {
           <Link to="/verification" className="block py-2 px-4 rounded hover:bg-gray-700">
             Verification
           </Link>
+          <Link to="/checkin-checkout" className="block py-2 px-4 rounded hover:bg-gray-700">
+            Check-in & Check-out
+          </Link>
         </nav>
       </aside>
     </div>
