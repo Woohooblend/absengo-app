@@ -4,6 +4,7 @@ import Dashboard from "../pages/dashboard";
 import Login from "../pages/auth/Login";
 import Verification from "../pages/verification";
 import CheckinCheckout from "../pages/checkin-checkout";
+import History from "../pages/history";
 import ProtectedRoute from "./ProtectedRoute";
 
 function App() {
@@ -31,6 +32,14 @@ function App() {
         element={
           <ProtectedRoute>
             <CheckinCheckout />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/history"
+        element={
+          <ProtectedRoute>
+            <History />
           </ProtectedRoute>
         }
       />

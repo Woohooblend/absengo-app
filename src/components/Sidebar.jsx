@@ -19,6 +19,9 @@ const Sidebar = () => {
           <Link to="/checkin-checkout" className="block py-2 px-4 rounded hover:bg-gray-700">
             Check-in & Check-out
           </Link>
+          <Link to="/history" className="block py-2 px-4 rounded hover:bg-gray-700">
+            Attandance History
+          </Link>
         </nav>
       </aside>
     </div>
