@@ -1,4 +1,3 @@
-// App.jsx
 import { Routes, Route } from "react-router-dom";
 import Dashboard from "../pages/dashboard";
 import Login from "../pages/auth/Login";
@@ -48,3 +47,4 @@ function App() {
 }
 
 export default App;
+

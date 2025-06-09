@@ -15,7 +15,7 @@ const Verification = () => {
           <nav className="text-sm text-gray-600 mb-4 flex items-center space-x-1">
             <span className="text-gray-400">Home</span>
             <ChevronRight className="w-4 h-4" />
-            <span className="text-gray-400">Verification</span>
+            <span className="text-blue-600 font-medium">Verification</span>
           </nav>
 
           {/* Page Title */}
