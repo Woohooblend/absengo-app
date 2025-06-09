@@ -1,23 +1,31 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 const Login = () => {
-//   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [signupUsername, setSignupUsername] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
-  const [storedAccounts, setStoredAccounts] = useState([]);
-  const [attendanceList, setAttendanceList] = useState([]);
   const [attendanceNote, setAttendanceNote] = useState("");
+  const [attendanceList, setAttendanceList] = useState([]);
   const [loginError, setLoginError] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [showChangePassword, setShowChangePassword] = useState(false);
+
+  const [storedAccounts, setStoredAccounts] = useState(() => {
+    const saved = localStorage.getItem("accounts");
+    return saved ? JSON.parse(saved) : [];
+  });
 
   const { setIsLoggedIn, isLoggedIn } = useAuth();
-
   const navigate = useNavigate();
+
+  useEffect(() => {
+    localStorage.setItem("accounts", JSON.stringify(storedAccounts));
+  }, [storedAccounts]);
 
   const handleSignup = () => {
     if (signupUsername && signupPassword) {
@@ -25,13 +33,14 @@ const Login = () => {
         (acc) => acc.username === signupUsername
       );
       if (!exists) {
-        setStoredAccounts([...storedAccounts, { username: signupUsername, password: signupPassword }]);
+        const updated = [...storedAccounts, { username: signupUsername, password: signupPassword }];
+        setStoredAccounts(updated);
         setSignupUsername("");
         setSignupPassword("");
         setIsSigningUp(false);
-        alert("Pendaftaran berhasil! Silakan login.");
+        alert("Registration successful! Please log in.");
       } else {
-        alert("Username sudah terdaftar. Silakan login.");
+        alert("Username already registered. Please log in.");
       }
     }
   };
@@ -40,12 +49,12 @@ const Login = () => {
     const match = storedAccounts.find(
       (acc) => acc.username === username && acc.password === password
     );
-    if (true) {
-        setIsLoggedIn(true)
-        navigate("/", { replace: true });
-        setLoginError("");
+    if (match) {
+      setIsLoggedIn(true);
+      navigate("/", { replace: true });
+      setLoginError("");
     } else {
-      setLoginError("Akun Anda tidak terdaftar.");
+      setLoginError("Your account is not registered.");
     }
   };
 
@@ -65,108 +74,122 @@ const Login = () => {
     }
   };
 
+  const handlePasswordChange = () => {
+    if (!newPassword) return;
+
+    const updatedAccounts = storedAccounts.map((acc) =>
+      acc.username === username ? { ...acc, password: newPassword } : acc
+    );
+    setStoredAccounts(updatedAccounts);
+    setNewPassword("");
+    setShowChangePassword(false);
+    alert("Password successfully changed.");
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-700 to-pink-600 flex items-center justify-center px-4">
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.9 }} 
-        animate={{ opacity: 1, scale: 1 }}
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl max-w-md w-full p-10"
+        className="bg-white rounded-xl shadow-lg max-w-md w-full p-8 space-y-6"
       >
-        <h1 className="text-4xl font-extrabold text-center text-gradient bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-700 mb-8">
-          Absen<span className="text-indigo-900">Go</span>
+        <h1 className="text-3xl font-bold text-center text-gray-800">
+          Absen<span className="text-blue-600">Go</span>
         </h1>
 
         {!isLoggedIn ? (
           isSigningUp ? (
-            <div className="space-y-6">
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-gray-700 text-center">Create Your Account</h2>
               <input
                 type="text"
-                placeholder="Buat username"
+                placeholder="Create username"
                 value={signupUsername}
                 onChange={(e) => setSignupUsername(e.target.value)}
-                className="w-full px-5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               />
               <input
                 type="password"
-                placeholder="Buat password"
+                placeholder="Create password"
                 value={signupPassword}
                 onChange={(e) => setSignupPassword(e.target.value)}
-                className="w-full px-5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               />
               <button
                 onClick={handleSignup}
-                className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-indigo-700 hover:to-purple-800 text-white font-semibold rounded-xl shadow-lg transition"
+                className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-md transition"
               >
                 Sign Up
               </button>
               <button
                 onClick={() => setIsSigningUp(false)}
-                className="w-full text-center text-sm text-indigo-600 hover:underline"
+                className="w-full text-center text-sm text-blue-600 hover:underline"
               >
-                Sudah punya akun? Login di sini
+                Already have an account? Log in
               </button>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-4">
+               <h2 className="text-xl font-semibold text-gray-700 text-center">Welcome Back!</h2>
               <input
                 type="text"
-                placeholder="Masukkan username"
+                placeholder="Enter username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-600 transition"
+                className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               />
               <input
                 type="password"
-                placeholder="Masukkan password"
+                placeholder="Enter password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-600 transition"
+                className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
               />
               <button
                 onClick={handleLogin}
-                className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-purple-700 hover:to-indigo-800 text-white font-semibold rounded-xl shadow-lg transition"
+                className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-md transition"
               >
                 Login
               </button>
               {loginError && <p className="text-center text-red-600 font-medium">{loginError}</p>}
               <button
                 onClick={() => setIsSigningUp(true)}
-                className="w-full text-center text-sm text-indigo-600 hover:underline"
+                className="w-full text-center text-sm text-blue-600 hover:underline"
               >
-                Belum punya akun? Daftar di sini
+                Don't have an account? Sign up here
               </button>
             </div>
           )
         ) : (
-          <div className="space-y-8">
-            <div className="text-center text-lg font-semibold text-indigo-800">
-              Selamat datang, <span className="font-bold">{username}</span>
+          <div className="space-y-6">
+            <div className="text-center text-xl font-semibold text-gray-800">
+              Welcome, <span className="font-bold text-blue-600">{username}</span>
             </div>
 
             <input
               type="text"
-              placeholder="Catatan kehadiran (opsional)"
+              placeholder="Attendance note (optional)"
               value={attendanceNote}
               onChange={(e) => setAttendanceNote(e.target.value)}
-              className="w-full px-5 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-600 transition"
+              className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
             />
             <button
               onClick={handleAddAttendance}
-              className="w-full py-3 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-purple-600 hover:to-pink-700 text-white font-semibold rounded-xl shadow-lg transition"
+              className="w-full py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md shadow-md transition"
             >
-              Daftar Kehadiran
+              Register Attendance
             </button>
 
             <div>
-              <h2 className="text-indigo-800 font-semibold mb-2">Riwayat Kehadiran:</h2>
-              <ul className="max-h-40 overflow-y-auto space-y-1 text-gray-700 list-disc list-inside">
+              <h2 className="text-gray-800 font-semibold mb-2">Attendance History:</h2>
+              <ul className="max-h-40 overflow-y-auto space-y-2 text-gray-700 list-disc list-inside p-2 border rounded-md">
                 {attendanceList.length === 0 ? (
-                  <li className="italic text-gray-400">Belum ada riwayat kehadiran.</li>
+                  <li className="italic text-gray-400">No attendance history yet.</li>
                 ) : (
                   attendanceList.map((item, idx) => (
                     <li key={idx}>
-                      <span className="font-mono text-sm text-gray-500">{item.time}</span> — {item.note || "Tanpa catatan"}
+                      <span className="font-mono text-sm text-gray-500">{item.time}</span> — {item.note || "No notes"}
                     </li>
                   ))
                 )}
@@ -174,8 +197,37 @@ const Login = () => {
             </div>
 
             <button
+              onClick={() => setShowChangePassword(!showChangePassword)}
+              className="w-full py-2 border border-gray-300 text-gray-700 font-semibold rounded-md hover:bg-gray-50 transition"
+            >
+              {showChangePassword ? "Close" : "Change Password"}
+            </button>
+
+            {showChangePassword && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="space-y-4 overflow-hidden"
+              >
+                <input
+                  type="password"
+                  placeholder="New password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                />
+                <button
+                  onClick={handlePasswordChange}
+                  className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md transition"
+                >
+                  Save New Password
+                </button>
+              </motion.div>
+            )}
+
+            <button
               onClick={handleLogout}
-              className="w-full py-3 border border-pink-600 text-pink-600 font-semibold rounded-xl hover:bg-pink-100 transition"
+              className="w-full py-2 border border-red-500 text-red-500 font-semibold rounded-md hover:bg-red-50 transition"
             >
               Logout
             </button>
