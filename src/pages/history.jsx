@@ -1,34 +1,18 @@
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const History = () => {
   const [filterBy, setFilterBy] = useState("Subject");
+  const [data, setData] = useState([]);
 
-  const data = [
-    {
-      subject: "Algorithm and Programming",
-      lecturer: "Prof. A",
-      time: "3 Sept, Tue, 09:00 - 11:00",
-      checkin: "Done",
-      checkout: "Not Yet",
-    },
-    {
-      subject: "Algorithm and Programming",
-      lecturer: "Prof. A",
-      time: "7 Sept, Fri, 13:00 - 15:00",
-      checkin: "Not Yet",
-      checkout: "Not Yet",
-    },
-    {
-      subject: "Algorithm and Programming",
-      lecturer: "Prof. A",
-      time: "10 Sept, Tue, 09:00 - 11:00",
-      checkin: "Not Yet",
-      checkout: "Not Yet",
-    },
-  ];
+  useEffect(() => {
+    const attendance = JSON.parse(
+      localStorage.getItem("attendance_history") || "[]"
+    );
+    setData(attendance);
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">

@@ -1,33 +1,82 @@
 import { Bell } from "lucide-react";
-import { useAuth } from "../context/AuthContext"; // Dikembalikan
+import { useAuth } from "../context/AuthContext";
 import { useState, useEffect, useRef } from "react";
 
 const Header = () => {
-  const { setIsLoggedIn } = useAuth(); // Dikembalikan
+  const { setIsLoggedIn } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false); // Dikembalikan
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [showAutoNotif, setShowAutoNotif] = useState(false);
 
-  const profileRef = useRef(null); // Dikembalikan
+  const profileRef = useRef(null);
   const notificationRef = useRef(null);
 
-  const handleLogout = () => { // Dikembalikan
+  // Fungsi untuk cek absensi hari ini
+  const checkAttendanceNotif = () => {
+    const attendance = JSON.parse(localStorage.getItem("attendance_history") || "[]");
+    const today = "3 Sept, Tue, 09:00 - 11:00"; // Ganti sesuai logika tanggal/jadwal dinamis jika perlu
+    let notifList = [];
+
+    // Jika BELUM ADA DATA absensi sama sekali
+    if (attendance.length === 0) {
+      notifList.push("⏰ You haven't checked in for today's class!");
+      notifList.push("⏰ You haven't checked out for today's class!");
+      return notifList;
+    }
+
+    // Jika ADA DATA, cek absensi hari ini
+    const found = attendance.find(item => item.time === today);
+    if (!found || found.checkin !== "Done") {
+      notifList.push("⏰ You haven't checked in for today's class!");
+    }
+    if (!found || found.checkout !== "Done") {
+      notifList.push("⏰ You haven't checked out for today's class!");
+    }
+    return notifList;
+  };
+
+  // Cek otomatis saat halaman dibuka
+  useEffect(() => {
+    const notifList = checkAttendanceNotif();
+    setNotifications([
+      ...notifList,
+      "🕘 Class \"OOP\" starts in 30 minutes",
+      "📋 10 students haven't checked in yet",
+      "📢 New announcement from Prof. Linda"
+    ]);
+    if (notifList.length > 0) {
+      setShowAutoNotif(true);
+      setShowNotifications(true);
+      // Auto close setelah 3 detik
+      setTimeout(() => setShowAutoNotif(false), 3000);
+    }
+  }, []);
+
+  const handleLogout = () => {
     setIsLoggedIn(false);
   };
 
   const toggleNotifications = () => {
     setShowNotifications((prev) => !prev);
     setIsProfileOpen(false);
+    // Update notifikasi setiap kali tombol lonceng ditekan
+    const notifList = checkAttendanceNotif();
+    setNotifications([
+      ...notifList,
+      "🕘 Class \"OOP\" starts in 30 minutes",
+      "📋 10 students haven't checked in yet",
+      "📢 New announcement from Prof. Linda"
+    ]);
   };
 
-  const toggleProfileMenu = () => { // Dikembalikan
+  const toggleProfileMenu = () => {
     setIsProfileOpen((prev) => !prev);
     setShowNotifications(false);
   };
 
-  // Efek untuk menutup dropdown jika klik terjadi di luar area
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Logika untuk profil dikembalikan
       if (profileRef.current && !profileRef.current.contains(event.target)) {
         setIsProfileOpen(false);
       }
@@ -67,33 +116,44 @@ const Header = () => {
             className="relative text-gray-600 hover:text-gray-800"
           >
             <Bell className="w-5 h-5" />
-            <span className="absolute top-0 right-0 block w-2 h-2 bg-red-500 rounded-full"></span>
+            {notifications.some(n => n.includes("haven't checked")) && (
+              <span className="absolute top-0 right-0 block w-2 h-2 bg-red-500 rounded-full"></span>
+            )}
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-72 bg-white border rounded-md shadow-lg">
+            <div className="absolute right-0 mt-2 w-72 bg-white border rounded-md shadow-lg z-20">
               <div className="p-4 border-b font-semibold text-gray-700">
                 Notifications
               </div>
               <ul className="max-h-60 overflow-y-auto divide-y text-sm text-gray-700">
-                <li className="p-3 hover:bg-gray-100 cursor-pointer">
-                  🕘 Class "OOP" starts in 30 minutes
-                </li>
-                <li className="p-3 hover:bg-gray-100 cursor-pointer">
-                  📋 10 students haven't checked in yet
-                </li>
-                <li className="p-3 hover:bg-gray-100 cursor-pointer">
-                  📢 New announcement from Prof. Linda
-                </li>
+                {notifications.length === 0 && (
+                  <li className="p-3 text-gray-400">No notifications</li>
+                )}
+                {notifications.map((notif, idx) => (
+                  <li key={idx} className="p-3 hover:bg-gray-100 cursor-pointer">
+                    {notif}
+                  </li>
+                ))}
               </ul>
               <div className="p-3 text-center text-sm text-blue-600 hover:underline cursor-pointer">
                 View all notifications
               </div>
             </div>
           )}
+
+          {/* Auto pop up notification */}
+          {showAutoNotif && notifications.length > 0 && (
+            <div className="absolute right-0 mt-14 w-72 bg-blue-50 border border-blue-200 rounded-md shadow-lg z-30 animate-pop">
+              <div className="p-4 text-blue-800 font-semibold flex items-center gap-2">
+                <Bell className="w-5 h-5" />
+                {notifications[0]}
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Profile Dropdown DIKEMBALIKAN dan DIMODIFIKASI */}
+        {/* Profile Dropdown */}
         <div className="relative" ref={profileRef}>
           <img
             src="https://i.pravatar.cc/40"
@@ -103,9 +163,6 @@ const Header = () => {
           />
           {isProfileOpen && (
             <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-md z-10">
-              
-              {/* OPSI "PROFILE" SUDAH DIHAPUS DARI SINI */}
-
               <button
                 onClick={handleLogout}
                 className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
@@ -116,6 +173,17 @@ const Header = () => {
           )}
         </div>
       </div>
+      <style>
+        {`
+          .animate-pop {
+            animation: pop 0.3s cubic-bezier(0.4,0,0.2,1);
+          }
+          @keyframes pop {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+        `}
+      </style>
     </header>
   );
 };

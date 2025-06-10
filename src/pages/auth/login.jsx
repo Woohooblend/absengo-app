@@ -14,6 +14,9 @@ const Login = () => {
   const [loginError, setLoginError] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [changeUser, setChangeUser] = useState("");
+  const [changePass, setChangePass] = useState("");
+  const [changeSuccess, setChangeSuccess] = useState("");
 
   const [storedAccounts, setStoredAccounts] = useState(() => {
     const saved = localStorage.getItem("accounts");
@@ -86,6 +89,22 @@ const Login = () => {
     alert("Password successfully changed.");
   };
 
+  const handlePasswordChangeFromLogin = () => {
+    if (!changeUser || !changePass) return;
+    const updatedAccounts = storedAccounts.map((acc) =>
+      acc.username === changeUser ? { ...acc, password: changePass } : acc
+    );
+    if (storedAccounts.some(acc => acc.username === changeUser)) {
+      setStoredAccounts(updatedAccounts);
+      setChangeSuccess("Password successfully changed. Please login.");
+      setChangeUser("");
+      setChangePass("");
+      setTimeout(() => setShowChangePassword(false), 1500);
+    } else {
+      setChangeSuccess("Username not found.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center px-4">
       <motion.div
@@ -129,6 +148,37 @@ const Login = () => {
                 Already have an account? Log in
               </button>
             </div>
+          ) : showChangePassword ? (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-gray-700 text-center">Change Password</h2>
+              <input
+                type="text"
+                placeholder="Enter your username"
+                value={changeUser}
+                onChange={(e) => setChangeUser(e.target.value)}
+                className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              />
+              <input
+                type="password"
+                placeholder="Enter new password"
+                value={changePass}
+                onChange={(e) => setChangePass(e.target.value)}
+                className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              />
+              <button
+                onClick={handlePasswordChangeFromLogin}
+                className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-md transition"
+              >
+                Change Password
+              </button>
+              {changeSuccess && <p className="text-center text-green-600 font-medium">{changeSuccess}</p>}
+              <button
+                onClick={() => { setShowChangePassword(false); setChangeSuccess(""); }}
+                className="w-full text-center text-sm text-blue-600 hover:underline"
+              >
+                Back to Login
+              </button>
+            </div>
           ) : (
             <div className="space-y-4">
                <h2 className="text-xl font-semibold text-gray-700 text-center">Welcome Back!</h2>
@@ -158,6 +208,12 @@ const Login = () => {
                 className="w-full text-center text-sm text-blue-600 hover:underline"
               >
                 Don't have an account? Sign up here
+              </button>
+              <button
+                onClick={() => setShowChangePassword(true)}
+                className="w-full text-center text-sm text-blue-600 hover:underline"
+              >
+                Forgot/Change Password?
               </button>
             </div>
           )

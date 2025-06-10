@@ -1,8 +1,56 @@
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { ChevronRight } from "lucide-react";
+import { useState } from "react";
 
 const CheckinCheckout = () => {
+  const [showModal, setShowModal] = useState(false);
+  const [modalCaption, setModalCaption] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+
+  const saveAttendance = (type) => {
+    const attendance = JSON.parse(localStorage.getItem("attendance_history") || "[]");
+    const today = "3 Sept, Tue, 09:00 - 11:00"; // Sesuaikan dengan jadwal hari ini
+    let found = attendance.find(item => item.time === today);
+    if (!found) {
+      found = {
+        subject: "Algorithm and Programming",
+        lecturer: "Prof. A",
+        time: today,
+        checkin: "Not Yet",
+        checkout: "Not Yet",
+      };
+      attendance.push(found);
+    }
+    if (type === "checkin") found.checkin = "Done";
+    if (type === "checkout") found.checkout = "Done";
+    localStorage.setItem("attendance_history", JSON.stringify(attendance));
+  };
+
+  const handleCheckin = () => {
+    setModalCaption("Checking in...");
+    setShowModal(true);
+    setSuccessMsg("");
+    setTimeout(() => {
+      setShowModal(false);
+      setSuccessMsg("You have successfully checked in!");
+      saveAttendance("checkin");
+      setTimeout(() => setSuccessMsg(""), 1500);
+    }, 1500);
+  };
+
+  const handleCheckout = () => {
+    setModalCaption("Checking out...");
+    setShowModal(true);
+    setSuccessMsg("");
+    setTimeout(() => {
+      setShowModal(false);
+      setSuccessMsg("You have successfully checked out!");
+      saveAttendance("checkout");
+      setTimeout(() => setSuccessMsg(""), 1500);
+    }, 1500);
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -60,7 +108,10 @@ const CheckinCheckout = () => {
                 <p className="text-blue-600 font-medium text-lg mb-2">
                   Check-in Verification
                 </p>
-                <button className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow">
+                <button
+                  className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow"
+                  onClick={handleCheckin}
+                >
                   Check-in
                 </button>
               </div>
@@ -69,12 +120,61 @@ const CheckinCheckout = () => {
                 <p className="text-blue-600 font-medium text-lg mb-2">
                   Check-out Verification
                 </p>
-                <button className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow">
+                <button
+                  className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow"
+                  onClick={handleCheckout}
+                >
                   Check-out
                 </button>
               </div>
             </div>
           </div>
+
+          {/* Modal Loading & Success */}
+          {(showModal || successMsg) && (
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 transition-opacity duration-300">
+              <div className="bg-white rounded-lg p-8 flex flex-col items-center shadow-lg animate-pop">
+                {showModal && (
+                  <>
+                    <div className="loader mb-4"></div>
+                    <p className="text-blue-700 font-medium">{modalCaption}</p>
+                  </>
+                )}
+                {successMsg && (
+                  <>
+                    <svg className="w-12 h-12 text-green-500 mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <p className="text-green-600 font-bold text-xl">{successMsg}</p>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+          {/* Loader & Pop Up Animation CSS */}
+          <style>
+            {`
+              .loader {
+                border: 4px solid #e0e0e0;
+                border-top: 4px solid #3498db;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                animation: spin 1s linear infinite;
+              }
+              @keyframes spin {
+                0% { transform: rotate(0deg);}
+                100% { transform: rotate(360deg);}
+              }
+              .animate-pop {
+                animation: pop 0.3s cubic-bezier(0.4,0,0.2,1);
+              }
+              @keyframes pop {
+                0% { transform: scale(0.8); opacity: 0; }
+                100% { transform: scale(1); opacity: 1; }
+              }
+            `}
+          </style>
         </div>
       </div>
     </div>
