@@ -9,6 +9,9 @@ const Verification = () => {
   const [loadingCaption, setLoadingCaption] = useState("");
   const [showModal, setShowModal] = useState(false);
 
+  const gpsVerified = localStorage.getItem("gps_verified") === "true";
+  const wifiVerified = localStorage.getItem("wifi_verified") === "true";
+
   // Handler untuk GPS Verification
   const handleGPSVerification = () => {
     setLoadingCaption("Requesting location access...");
@@ -83,10 +86,18 @@ const Verification = () => {
                 GPS Verification
               </p>
               <button
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded shadow"
-                onClick={handleGPSVerification}
+                className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded shadow ${gpsVerified ? "opacity-50 cursor-not-allowed" : ""}`}
+
+                onClick={() => {
+                  if (gpsVerified) {
+                    alert("You are already verified for GPS.");
+                  } else {
+                    handleGPSVerification();
+                  }
+                }}
+                disabled={gpsVerified}
               >
-                Submit Attendance
+                {gpsVerified ? "You are already verified" : "Submit Attendance"}
               </button>
             </div>
 
@@ -95,10 +106,18 @@ const Verification = () => {
                 WiFi Verification
               </p>
               <button
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded shadow"
-                onClick={handleWiFiVerification}
+                className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded shadow ${wifiVerified ? "opacity-50 cursor-not-allowed" : ""}`}
+
+                onClick={() => {
+                  if (wifiVerified) {
+                    alert("You are already verified for WiFi.");
+                  } else {
+                    handleWiFiVerification();
+                  }
+                }}
+                disabled={wifiVerified}
               >
-                Submit Attendance
+                {wifiVerified ? "You are already verified" : "Submit Attendance"}
               </button>
             </div>
           </div>
