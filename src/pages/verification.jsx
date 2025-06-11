@@ -105,7 +105,7 @@ const Verification = () => {
 
           {/* Modal Loading & Success */}
           {showModal && (
-            <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-15 z-50">
+            <div className="fixed inset-0 flex items-center justify-center bg-transparent z-50">
               <div className="bg-white rounded-lg p-8 flex flex-col items-center shadow-lg">
                 <div className="loader mb-4"></div>
                 <p className="text-blue-700 font-medium">{loadingCaption}</p>
@@ -113,7 +113,7 @@ const Verification = () => {
             </div>
           )}
           {success && (
-            <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-15 z-50">
+            <div className="fixed inset-0 flex items-center justify-center bg-transparent z-50">
               <div className="bg-white rounded-lg p-8 flex flex-col items-center shadow-lg">
                 <svg className="w-12 h-12 text-green-500 mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />

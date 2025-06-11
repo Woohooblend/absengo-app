@@ -54,6 +54,7 @@ const Login = () => {
     );
     if (match) {
       setIsLoggedIn(true);
+      localStorage.setItem("current_user", username); // Tambahkan baris ini
       navigate("/", { replace: true });
       setLoginError("");
     } else {

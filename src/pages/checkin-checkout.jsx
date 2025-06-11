@@ -146,7 +146,7 @@ const CheckinCheckout = () => {
 
           {/* Modal Loading & Success */}
           {(showModal || successMsg) && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 transition-opacity duration-300">
+            <div className="fixed inset-0 flex items-center justify-center bg-transparent z-50 transition-opacity duration-300">
               <div className="bg-white rounded-lg p-8 flex flex-col items-center shadow-lg animate-pop">
                 {showModal && (
                   <>

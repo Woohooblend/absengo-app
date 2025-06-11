@@ -15,22 +15,29 @@ const Header = () => {
   // Fungsi untuk cek absensi hari ini
   const checkAttendanceNotif = () => {
     const attendance = JSON.parse(localStorage.getItem("attendance_history") || "[]");
-    const today = "3 Sept, Tue, 09:00 - 11:00"; // Ganti sesuai logika tanggal/jadwal dinamis jika perlu
-    let notifList = [];
+    const today = "3 Sept, Tue, 09:00 - 11:00"; // Sesuaikan dengan jadwal hari ini
 
-    // Jika BELUM ADA DATA absensi sama sekali
-    if (attendance.length === 0) {
+    let notifList = [];
+    // Cari data absensi hari ini
+    const found = attendance.find(item => item.time === today);
+
+    // Jika belum ada data absensi hari ini, tampilkan notif
+    if (!found) {
       notifList.push("⏰ You haven't checked in for today's class!");
       notifList.push("⏰ You haven't checked out for today's class!");
       return notifList;
     }
 
-    // Jika ADA DATA, cek absensi hari ini
-    const found = attendance.find(item => item.time === today);
-    if (!found || found.checkin !== "Done") {
+    // Jika sudah check-in dan check-out, tidak ada notif
+    if (found.checkin === "Done" && found.checkout === "Done") {
+      return [];
+    }
+
+    // Jika salah satu belum, tampilkan notif yang sesuai
+    if (found.checkin !== "Done") {
       notifList.push("⏰ You haven't checked in for today's class!");
     }
-    if (!found || found.checkout !== "Done") {
+    if (found.checkout !== "Done") {
       notifList.push("⏰ You haven't checked out for today's class!");
     }
     return notifList;
