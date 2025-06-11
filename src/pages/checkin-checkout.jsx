@@ -28,6 +28,13 @@ const CheckinCheckout = () => {
   };
 
   const handleCheckin = () => {
+    // Cek status verifikasi
+    const gpsVerified = localStorage.getItem("gps_verified") === "true";
+    const wifiVerified = localStorage.getItem("wifi_verified") === "true";
+    if (!gpsVerified || !wifiVerified) {
+      alert("Please complete GPS and WiFi verification first on the Verification page.");
+      return;
+    }
     setModalCaption("Checking in...");
     setShowModal(true);
     setSuccessMsg("");
@@ -40,6 +47,13 @@ const CheckinCheckout = () => {
   };
 
   const handleCheckout = () => {
+    // Cek status verifikasi
+    const gpsVerified = localStorage.getItem("gps_verified") === "true";
+    const wifiVerified = localStorage.getItem("wifi_verified") === "true";
+    if (!gpsVerified || !wifiVerified) {
+      alert("Please complete GPS and WiFi verification first on the Verification page.");
+      return;
+    }
     setModalCaption("Checking out...");
     setShowModal(true);
     setSuccessMsg("");

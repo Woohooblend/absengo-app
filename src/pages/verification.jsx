@@ -23,6 +23,8 @@ const Verification = () => {
             setLoading(false);
             setSuccess(true);
             setShowModal(false);
+            // Simpan status verifikasi GPS
+            localStorage.setItem("gps_verified", "true");
             setTimeout(() => setSuccess(false), 1500);
           }, 1500);
         },
@@ -49,6 +51,8 @@ const Verification = () => {
       setLoading(false);
       setSuccess(true);
       setShowModal(false);
+      // Simpan status verifikasi WiFi
+      localStorage.setItem("wifi_verified", "true");
       setTimeout(() => setSuccess(false), 1500);
     }, 1500);
   };
