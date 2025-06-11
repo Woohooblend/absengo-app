@@ -1,6 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import Dashboard from "../pages/dashboard";
-import Login from "../pages/auth/Login";
+import Login from "../pages/auth/login";
 import Verification from "../pages/verification";
 import CheckinCheckout from "../pages/checkin-checkout";
 import History from "../pages/history";
