@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { login } from "../../api/auth";
 
 const Login = () => {
   const [isSigningUp, setIsSigningUp] = useState(false);
@@ -17,6 +18,7 @@ const Login = () => {
   const [changeUser, setChangeUser] = useState("");
   const [changePass, setChangePass] = useState("");
   const [changeSuccess, setChangeSuccess] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const [storedAccounts, setStoredAccounts] = useState(() => {
     const saved = localStorage.getItem("accounts");
@@ -48,17 +50,19 @@ const Login = () => {
     }
   };
 
-  const handleLogin = () => {
-    const match = storedAccounts.find(
-      (acc) => acc.username === username && acc.password === password
-    );
-    if (match) {
+  const handleLogin = async () => {
+    setIsLoading(true);
+    try {
+      const result = await login(username, password);
+      localStorage.setItem("token", result.key);
       setIsLoggedIn(true);
       localStorage.setItem("current_user", username); // Tambahkan baris ini
       navigate("/", { replace: true });
       setLoginError("");
-    } else {
-      setLoginError("Your account is not registered.");
+    } catch (err) {
+      setLoginError("Invalid username or password");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -199,9 +203,10 @@ const Login = () => {
               />
               <button
                 onClick={handleLogin}
-                className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-md transition"
+                disabled={isLoading}
+                className={`w-full py-2 ${isLoading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'} text-white font-semibold rounded-md shadow-md transition`}
               >
-                Login
+                {isLoading ? 'Loading...' : 'Login'}
               </button>
               {loginError && <p className="text-center text-red-600 font-medium">{loginError}</p>}
               <button
