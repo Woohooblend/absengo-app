@@ -51,7 +51,7 @@ const CheckinCheckout = () => {
       setShowModal(false);
       setSuccessMsg("You have successfully checked in!");
       saveAttendance("checkin");
-      setTimeout(() => window.location.reload(), 1500); // reload to update status
+      setTimeout(() => setSuccessMsg(""), 1500); // reload to update status
     }, 1500);
   };
 
@@ -69,7 +69,7 @@ const CheckinCheckout = () => {
       setShowModal(false);
       setSuccessMsg("You have successfully checked out!");
       saveAttendance("checkout");
-      setTimeout(() => window.location.reload(), 1500); // reload to update status
+      setTimeout(() => setSuccessMsg(""), 1500); // reload to update status
     }, 1500);
   };
 
