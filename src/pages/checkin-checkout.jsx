@@ -8,9 +8,19 @@ const CheckinCheckout = () => {
   const [modalCaption, setModalCaption] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
+  // Ambil data absensi hari ini dari localStorage
+  const today = "3 Sept, Tue, 09:00 - 11:00";
+  const attendance = JSON.parse(localStorage.getItem("attendance_history") || "[]");
+  let found = attendance.find(item => item.time === today);
+
+  // Jika belum ada data absensi hari ini, status awal "Not Yet"
+  const checkinStatus = found ? found.checkin : "Not Yet";
+  const checkoutStatus = found ? found.checkout : "Not Yet";
+  const alreadyCheckedIn = checkinStatus === "Done";
+  const alreadyCheckedOut = checkoutStatus === "Done";
+
   const saveAttendance = (type) => {
-    const attendance = JSON.parse(localStorage.getItem("attendance_history") || "[]");
-    const today = "3 Sept, Tue, 09:00 - 11:00"; // Sesuaikan dengan jadwal hari ini
+    let attendance = JSON.parse(localStorage.getItem("attendance_history") || "[]");
     let found = attendance.find(item => item.time === today);
     if (!found) {
       found = {
@@ -28,6 +38,12 @@ const CheckinCheckout = () => {
   };
 
   const handleCheckin = () => {
+    const gpsVerified = localStorage.getItem("gps_verified") === "true";
+    const wifiVerified = localStorage.getItem("wifi_verified") === "true";
+    if (!gpsVerified || !wifiVerified) {
+      alert("Please complete GPS and WiFi verification first on the Verification page.");
+      return;
+    }
     setModalCaption("Checking in...");
     setShowModal(true);
     setSuccessMsg("");
@@ -35,11 +51,17 @@ const CheckinCheckout = () => {
       setShowModal(false);
       setSuccessMsg("You have successfully checked in!");
       saveAttendance("checkin");
-      setTimeout(() => setSuccessMsg(""), 1500);
+      setTimeout(() => window.location.reload(), 1500); // reload to update status
     }, 1500);
   };
 
   const handleCheckout = () => {
+    const gpsVerified = localStorage.getItem("gps_verified") === "true";
+    const wifiVerified = localStorage.getItem("wifi_verified") === "true";
+    if (!gpsVerified || !wifiVerified) {
+      alert("Please complete GPS and WiFi verification first on the Verification page.");
+      return;
+    }
     setModalCaption("Checking out...");
     setShowModal(true);
     setSuccessMsg("");
@@ -47,17 +69,15 @@ const CheckinCheckout = () => {
       setShowModal(false);
       setSuccessMsg("You have successfully checked out!");
       saveAttendance("checkout");
-      setTimeout(() => setSuccessMsg(""), 1500);
+      setTimeout(() => window.location.reload(), 1500); // reload to update status
     }, 1500);
   };
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-
       <div className="flex flex-1">
         <Sidebar />
-
         <div className="flex-1 p-6 bg-gray-100">
           {/* Breadcrumb */}
           <nav className="text-sm text-gray-600 mb-4 flex items-center space-x-1">
@@ -89,15 +109,15 @@ const CheckinCheckout = () => {
                 </div>
                 <div>
                   <span className="font-medium">Time: </span>
-                  3 Sept, Tue, 09:00 - 11:00
+                  {today}
                 </div>
                 <div>
                   <span className="font-medium">Check-in Status: </span>
-                  Done
+                  {checkinStatus}
                 </div>
                 <div>
                   <span className="font-medium">Check-out Status: </span>
-                  Not Yet
+                  {checkoutStatus}
                 </div>
               </div>
             </div>
@@ -109,10 +129,16 @@ const CheckinCheckout = () => {
                   Check-in Verification
                 </p>
                 <button
-                  className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow"
-                  onClick={handleCheckin}
+                  className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow ${alreadyCheckedIn ? "opacity-50 cursor-not-allowed" : ""}`}
+                  onClick={() => {
+                    if (alreadyCheckedIn) {
+                      alert("You already checked in.");
+                    } else {
+                      handleCheckin();
+                    }
+                  }}
                 >
-                  Check-in
+                  {alreadyCheckedIn ? "You already checked in" : "Check-in"}
                 </button>
               </div>
 
@@ -121,10 +147,16 @@ const CheckinCheckout = () => {
                   Check-out Verification
                 </p>
                 <button
-                  className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow"
-                  onClick={handleCheckout}
+                  className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow ${alreadyCheckedOut ? "opacity-50 cursor-not-allowed" : ""}`}
+                  onClick={() => {
+                    if (alreadyCheckedOut) {
+                      alert("You already checked out.");
+                    } else {
+                      handleCheckout();
+                    }
+                  }}
                 >
-                  Check-out
+                  {alreadyCheckedOut ? "You already checked out" : "Check-out"}
                 </button>
               </div>
             </div>
@@ -132,7 +164,7 @@ const CheckinCheckout = () => {
 
           {/* Modal Loading & Success */}
           {(showModal || successMsg) && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50 transition-opacity duration-300">
+            <div className="fixed inset-0 flex items-center justify-center bg-transparent z-50 transition-opacity duration-300">
               <div className="bg-white rounded-lg p-8 flex flex-col items-center shadow-lg animate-pop">
                 {showModal && (
                   <>

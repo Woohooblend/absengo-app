@@ -9,6 +9,9 @@ const Verification = () => {
   const [loadingCaption, setLoadingCaption] = useState("");
   const [showModal, setShowModal] = useState(false);
 
+  const gpsVerified = localStorage.getItem("gps_verified") === "true";
+  const wifiVerified = localStorage.getItem("wifi_verified") === "true";
+
   // Handler untuk GPS Verification
   const handleGPSVerification = () => {
     setLoadingCaption("Requesting location access...");
@@ -23,6 +26,8 @@ const Verification = () => {
             setLoading(false);
             setSuccess(true);
             setShowModal(false);
+            // Simpan status verifikasi GPS
+            localStorage.setItem("gps_verified", "true");
             setTimeout(() => setSuccess(false), 1500);
           }, 1500);
         },
@@ -49,6 +54,8 @@ const Verification = () => {
       setLoading(false);
       setSuccess(true);
       setShowModal(false);
+      // Simpan status verifikasi WiFi
+      localStorage.setItem("wifi_verified", "true");
       setTimeout(() => setSuccess(false), 1500);
     }, 1500);
   };
@@ -79,10 +86,18 @@ const Verification = () => {
                 GPS Verification
               </p>
               <button
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded shadow"
-                onClick={handleGPSVerification}
+                className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded shadow ${gpsVerified ? "opacity-50 cursor-not-allowed" : ""}`}
+
+                onClick={() => {
+                  if (gpsVerified) {
+                    alert("You are already verified for GPS.");
+                  } else {
+                    handleGPSVerification();
+                  }
+                }}
+                disabled={gpsVerified}
               >
-                Submit Attendance
+                {gpsVerified ? "You are already verified" : "Submit Attendance"}
               </button>
             </div>
 
@@ -91,17 +106,25 @@ const Verification = () => {
                 WiFi Verification
               </p>
               <button
-                className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded shadow"
-                onClick={handleWiFiVerification}
+                className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded shadow ${wifiVerified ? "opacity-50 cursor-not-allowed" : ""}`}
+
+                onClick={() => {
+                  if (wifiVerified) {
+                    alert("You are already verified for WiFi.");
+                  } else {
+                    handleWiFiVerification();
+                  }
+                }}
+                disabled={wifiVerified}
               >
-                Submit Attendance
+                {wifiVerified ? "You are already verified" : "Submit Attendance"}
               </button>
             </div>
           </div>
 
           {/* Modal Loading & Success */}
           {showModal && (
-            <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-15 z-50">
+            <div className="fixed inset-0 flex items-center justify-center bg-transparent z-50">
               <div className="bg-white rounded-lg p-8 flex flex-col items-center shadow-lg">
                 <div className="loader mb-4"></div>
                 <p className="text-blue-700 font-medium">{loadingCaption}</p>
@@ -109,7 +132,7 @@ const Verification = () => {
             </div>
           )}
           {success && (
-            <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-15 z-50">
+            <div className="fixed inset-0 flex items-center justify-center bg-transparent z-50">
               <div className="bg-white rounded-lg p-8 flex flex-col items-center shadow-lg">
                 <svg className="w-12 h-12 text-green-500 mb-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
