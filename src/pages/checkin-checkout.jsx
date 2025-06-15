@@ -1,76 +1,101 @@
+import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { getRandomSubject, getCurrentDateTime } from "../utils/subjects";
 
 const CheckinCheckout = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalCaption, setModalCaption] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [currentSubject, setCurrentSubject] = useState(null);
+  const [currentDateTime, setCurrentDateTime] = useState("");
+  const [checkinStatus, setCheckinStatus] = useState("Not Yet");
+  const [checkoutStatus, setCheckoutStatus] = useState("Not Yet");
 
-  // Ambil data absensi hari ini dari localStorage
-  const today = "3 Sept, Tue, 09:00 - 11:00";
-  const attendance = JSON.parse(localStorage.getItem("attendance_history") || "[]");
-  let found = attendance.find(item => item.time === today);
+  useEffect(() => {
+    // Check if we need new subject for today
+    const lastSubjectUpdate = localStorage.getItem("last_subject_update");
+    const now = new Date().getTime();
+    
+    let todaySubject;
+    
+    if (!lastSubjectUpdate || (now - parseInt(lastSubjectUpdate)) >= 86400000) {
+      // If no subject set or 24 hours passed, get new random subject
+      todaySubject = getRandomSubject();
+      localStorage.setItem("today_subject", JSON.stringify(todaySubject));
+      localStorage.setItem("last_subject_update", now.toString());
+    } else {
+      // Use existing subject for today
+      todaySubject = JSON.parse(localStorage.getItem("today_subject"));
+    }
 
-  // Jika belum ada data absensi hari ini, status awal "Not Yet"
-  const checkinStatus = found ? found.checkin : "Not Yet";
-  const checkoutStatus = found ? found.checkout : "Not Yet";
-  const alreadyCheckedIn = checkinStatus === "Done";
-  const alreadyCheckedOut = checkoutStatus === "Done";
+    // Set subject and time
+    setCurrentSubject(todaySubject);
+    setCurrentDateTime(getCurrentDateTime());
+
+    // Update time every minute
+    const timer = setInterval(() => {
+      setCurrentDateTime(getCurrentDateTime());
+    }, 60000);
+
+    // Load existing attendance
+    const attendance = JSON.parse(localStorage.getItem("attendance_history") || "[]");
+    const today = getCurrentDateTime();
+    const found = attendance.find(item => item.time === today);
+    if (found) {
+      setCheckinStatus(found.checkin);
+      setCheckoutStatus(found.checkout);
+    }
+
+    // Clean up timer
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleCheckin = () => {
+    setModalCaption("Processing check-in...");
+    setShowModal(true);
+    
+    setTimeout(() => {
+      setShowModal(false);
+      setSuccessMsg("Successfully checked in!");
+      saveAttendance("checkin");
+      setCheckinStatus("Done");
+      setTimeout(() => setSuccessMsg(""), 1500);
+    }, 1500);
+  };
+
+  const handleCheckout = () => {
+    setModalCaption("Processing check-out...");
+    setShowModal(true);
+    
+    setTimeout(() => {
+      setShowModal(false);
+      setSuccessMsg("Successfully checked out!");
+      saveAttendance("checkout");
+      setCheckoutStatus("Done");
+      setTimeout(() => setSuccessMsg(""), 1500);
+    }, 1500);
+  };
 
   const saveAttendance = (type) => {
     let attendance = JSON.parse(localStorage.getItem("attendance_history") || "[]");
-    let found = attendance.find(item => item.time === today);
+    let found = attendance.find(item => item.time === currentDateTime);
     if (!found) {
       found = {
-        subject: "Algorithm and Programming",
-        lecturer: "Prof. A",
-        time: today,
+        subject: currentSubject.name,
+        lecturer: currentSubject.lecturer,
+        time: currentDateTime,
         checkin: "Not Yet",
         checkout: "Not Yet",
       };
       attendance.push(found);
     }
+    
     if (type === "checkin") found.checkin = "Done";
     if (type === "checkout") found.checkout = "Done";
+    
     localStorage.setItem("attendance_history", JSON.stringify(attendance));
-  };
-
-  const handleCheckin = () => {
-    const gpsVerified = localStorage.getItem("gps_verified") === "true";
-    const wifiVerified = localStorage.getItem("wifi_verified") === "true";
-    if (!gpsVerified || !wifiVerified) {
-      alert("Please complete GPS and WiFi verification first on the Verification page.");
-      return;
-    }
-    setModalCaption("Checking in...");
-    setShowModal(true);
-    setSuccessMsg("");
-    setTimeout(() => {
-      setShowModal(false);
-      setSuccessMsg("You have successfully checked in!");
-      saveAttendance("checkin");
-      setTimeout(() => window.location.reload(), 1500); // reload to update status
-    }, 1500);
-  };
-
-  const handleCheckout = () => {
-    const gpsVerified = localStorage.getItem("gps_verified") === "true";
-    const wifiVerified = localStorage.getItem("wifi_verified") === "true";
-    if (!gpsVerified || !wifiVerified) {
-      alert("Please complete GPS and WiFi verification first on the Verification page.");
-      return;
-    }
-    setModalCaption("Checking out...");
-    setShowModal(true);
-    setSuccessMsg("");
-    setTimeout(() => {
-      setShowModal(false);
-      setSuccessMsg("You have successfully checked out!");
-      saveAttendance("checkout");
-      setTimeout(() => window.location.reload(), 1500); // reload to update status
-    }, 1500);
   };
 
   return (
@@ -101,15 +126,15 @@ const CheckinCheckout = () => {
               <div className="space-y-2 text-sm text-gray-700">
                 <div>
                   <span className="font-medium">Subjects: </span>
-                  Algorithm and Programming
+                  {currentSubject?.name} {/* Menggunakan currentSubject.name */}
                 </div>
                 <div>
                   <span className="font-medium">Lecturer: </span>
-                  Prof. A
+                  {currentSubject?.lecturer} {/* Menggunakan currentSubject.lecturer */}
                 </div>
                 <div>
                   <span className="font-medium">Time: </span>
-                  {today}
+                  {currentDateTime}
                 </div>
                 <div>
                   <span className="font-medium">Check-in Status: </span>
@@ -129,16 +154,16 @@ const CheckinCheckout = () => {
                   Check-in Verification
                 </p>
                 <button
-                  className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow ${alreadyCheckedIn ? "opacity-50 cursor-not-allowed" : ""}`}
+                  className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow ${checkinStatus === "Done" ? "opacity-50 cursor-not-allowed" : ""}`}
                   onClick={() => {
-                    if (alreadyCheckedIn) {
+                    if (checkinStatus === "Done") {
                       alert("You already checked in.");
                     } else {
                       handleCheckin();
                     }
                   }}
                 >
-                  {alreadyCheckedIn ? "You already checked in" : "Check-in"}
+                  {checkinStatus === "Done" ? "You already checked in" : "Check-in"}
                 </button>
               </div>
 
@@ -147,16 +172,16 @@ const CheckinCheckout = () => {
                   Check-out Verification
                 </p>
                 <button
-                  className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow ${alreadyCheckedOut ? "opacity-50 cursor-not-allowed" : ""}`}
+                  className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow ${checkoutStatus === "Done" ? "opacity-50 cursor-not-allowed" : ""}`}
                   onClick={() => {
-                    if (alreadyCheckedOut) {
+                    if (checkoutStatus === "Done") {
                       alert("You already checked out.");
                     } else {
                       handleCheckout();
                     }
                   }}
                 >
-                  {alreadyCheckedOut ? "You already checked out" : "Check-out"}
+                  {checkoutStatus === "Done" ? "You already checked out" : "Check-out"}
                 </button>
               </div>
             </div>

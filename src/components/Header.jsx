@@ -2,6 +2,7 @@ import { Bell } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { getCurrentDateTime } from "../utils/subjects"; // Import the getCurrentDateTime function
 
 const Header = () => {
   const { setIsLoggedIn } = useAuth();
@@ -18,31 +19,32 @@ const Header = () => {
   // Fungsi untuk cek absensi hari ini
   const checkAttendanceNotif = () => {
     const attendance = JSON.parse(localStorage.getItem("attendance_history") || "[]");
-    const today = "3 Sept, Tue, 09:00 - 11:00"; // Sesuaikan dengan jadwal hari ini
+    const today = getCurrentDateTime(); // Use the current date/time format
 
     let notifList = [];
-    // Cari data absensi hari ini
+    // Find today's attendance
     const found = attendance.find(item => item.time === today);
 
-    // Jika belum ada data absensi hari ini, tampilkan notif
+    // If both check-in and check-out are done, return empty notifications
+    if (found && found.checkin === "Done" && found.checkout === "Done") {
+      return [];
+    }
+
+    // If no attendance record found, show both notifications
     if (!found) {
       notifList.push("⏰ You haven't checked in for today's class!");
       notifList.push("⏰ You haven't checked out for today's class!");
       return notifList;
     }
 
-    // Jika sudah check-in dan check-out, tidak ada notif
-    if (found.checkin === "Done" && found.checkout === "Done") {
-      return [];
-    }
-
-    // Jika salah satu belum, tampilkan notif yang sesuai
+    // Show specific notifications based on status
     if (found.checkin !== "Done") {
       notifList.push("⏰ You haven't checked in for today's class!");
     }
     if (found.checkout !== "Done") {
       notifList.push("⏰ You haven't checked out for today's class!");
     }
+
     return notifList;
   };
 
@@ -57,8 +59,7 @@ const Header = () => {
     ]);
     if (notifList.length > 0) {
       setShowAutoNotif(true);
-      setShowNotifications(true);
-      // Auto close setelah 3 detik
+      // Auto close after 3 seconds
       setTimeout(() => setShowAutoNotif(false), 3000);
     }
   }, []);
@@ -70,7 +71,6 @@ const Header = () => {
   const toggleNotifications = () => {
     setShowNotifications((prev) => !prev);
     setIsProfileOpen(false);
-    // Update notifikasi setiap kali tombol lonceng ditekan
     const notifList = checkAttendanceNotif();
     setNotifications([
       ...notifList,
