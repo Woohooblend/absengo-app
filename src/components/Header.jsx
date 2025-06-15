@@ -1,6 +1,7 @@
 import { Bell } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Header = () => {
   const { setIsLoggedIn } = useAuth();
@@ -8,9 +9,11 @@ const Header = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [showAutoNotif, setShowAutoNotif] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const profileRef = useRef(null);
   const notificationRef = useRef(null);
+  const navigate = useNavigate();
 
   // Fungsi untuk cek absensi hari ini
   const checkAttendanceNotif = () => {
@@ -82,6 +85,23 @@ const Header = () => {
     setShowNotifications(false);
   };
 
+  const handleSearch = (e) => {
+    const query = e.target.value.toLowerCase();
+    setSearchQuery(query);
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && searchQuery) {
+      const foundPage = pages.find(page => 
+        page.name.toLowerCase().includes(searchQuery)
+      );
+      if (foundPage) {
+        navigate(foundPage.path);
+        setSearchQuery("");
+      }
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
@@ -98,6 +118,14 @@ const Header = () => {
     };
   }, []);
 
+  // Define available pages for search
+  const pages = [
+    { name: "Dashboard", path: "/" },
+    { name: "Verification", path: "/verification" },
+    { name: "Check-in & Check-out", path: "/checkin-checkout" },
+    { name: "Attendance History", path: "/history" }
+  ];
+
   return (
     <header className="w-full bg-white shadow-md px-6 py-4 flex items-center justify-between z-20 relative">
       {/* Left: App Name */}
@@ -106,12 +134,36 @@ const Header = () => {
       </h1>
 
       {/* Center: Search Bar */}
-      <div className="flex-1 ml-64">
+      <div className="flex-1 ml-64 relative">
         <input
           type="text"
-          placeholder="Search..."
+          placeholder="Search pages (Dashboard, Verification, Check-in, History)..."
+          value={searchQuery}
+          onChange={handleSearch}
+          onKeyPress={handleKeyPress}
           className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
         />
+        {/* Dropdown results */}
+        {searchQuery && (
+          <div className="absolute top-full left-0 w-full max-w-md mt-1 bg-white border rounded-md shadow-lg z-50">
+            {pages
+              .filter(page => 
+                page.name.toLowerCase().includes(searchQuery.toLowerCase())
+              )
+              .map((page, index) => (
+                <div
+                  key={index}
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => {
+                    navigate(page.path);
+                    setSearchQuery("");
+                  }}
+                >
+                  {page.name}
+                </div>
+              ))}
+          </div>
+        )}
       </div>
 
       {/* Right: Notification + Profile */}
