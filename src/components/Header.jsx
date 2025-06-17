@@ -61,18 +61,24 @@ const Header = () => {
   useEffect(() => {
     const verificationNotifs = checkVerificationNotif();
     const attendanceNotifs = checkAttendanceNotif();
+    const currentUser = localStorage.getItem("current_user");
+    const accounts = JSON.parse(localStorage.getItem("accounts") || "[]");
+    const userAccount = accounts.find(acc => acc.username === currentUser);
     
-    setNotifications([
+    let notifications = [
       ...verificationNotifs,
       ...attendanceNotifs,
-      "🕘 Class \"OOP\" starts in 30 minutes",
-      "📋 10 students haven't checked in yet",
-      "📢 New announcement from Prof. Linda"
-    ]);
+    ];
 
-    if (verificationNotifs.length > 0) {
+    // Add prominent verification reminder for new users
+    if (userAccount?.isNewUser) {
+      notifications.unshift("🔔 New User: Please complete your GPS and WiFi verification!");
+    }
+
+    setNotifications(notifications);
+
+    if (verificationNotifs.length > 0 || userAccount?.isNewUser) {
       setShowAutoNotif(true);
-      // Auto close after 3 seconds
       setTimeout(() => setShowAutoNotif(false), 3000);
     }
   }, []);

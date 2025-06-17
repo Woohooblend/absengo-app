@@ -6,6 +6,7 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
 
   useEffect(() => {
     // Check if verification has expired (24 hours)
@@ -31,7 +32,9 @@ export const AuthProvider = ({ children }) => {
       isLoggedIn, 
       setIsLoggedIn,
       isVerified,
-      setIsVerified
+      setIsVerified,
+      isNewUser,
+      setIsNewUser
     }}>
       {children}
     </AuthContext.Provider>
