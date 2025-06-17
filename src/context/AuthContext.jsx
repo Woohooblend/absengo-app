@@ -7,7 +7,6 @@ export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
 
-  // Check verification status
   useEffect(() => {
     // Check if verification has expired (24 hours)
     const lastReset = localStorage.getItem("last_verification_reset");
@@ -19,18 +18,13 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem("wifi_verified");
       localStorage.setItem("last_verification_reset", now.toString());
       setIsVerified(false);
-      
-      // Show notification if user is logged in
-      if (isLoggedIn) {
-        alert("Daily verification required. Please verify your location and WiFi connection.");
-      }
     }
 
-    // Check current verification status
+    // Update verification status
     const gpsVerified = localStorage.getItem("gps_verified") === "true";
     const wifiVerified = localStorage.getItem("wifi_verified") === "true";
     setIsVerified(gpsVerified && wifiVerified);
-  }, [isLoggedIn]);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ 

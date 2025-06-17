@@ -13,33 +13,26 @@ const CheckinCheckout = () => {
   const [checkinStatus, setCheckinStatus] = useState("Not Yet");
   const [checkoutStatus, setCheckoutStatus] = useState("Not Yet");
 
+  // Load initial data
   useEffect(() => {
-    // Check if we need new subject for today
+    // Get today's subject from localStorage or generate new one
     const lastSubjectUpdate = localStorage.getItem("last_subject_update");
     const now = new Date().getTime();
     
     let todaySubject;
-    
     if (!lastSubjectUpdate || (now - parseInt(lastSubjectUpdate)) >= 86400000) {
-      // If no subject set or 24 hours passed, get new random subject
       todaySubject = getRandomSubject();
       localStorage.setItem("today_subject", JSON.stringify(todaySubject));
       localStorage.setItem("last_subject_update", now.toString());
     } else {
-      // Use existing subject for today
       todaySubject = JSON.parse(localStorage.getItem("today_subject"));
     }
 
-    // Set subject and time
+    // Set initial states
     setCurrentSubject(todaySubject);
     setCurrentDateTime(getCurrentDateTime());
 
-    // Update time every minute
-    const timer = setInterval(() => {
-      setCurrentDateTime(getCurrentDateTime());
-    }, 60000);
-
-    // Load existing attendance
+    // Load attendance status
     const attendance = JSON.parse(localStorage.getItem("attendance_history") || "[]");
     const today = getCurrentDateTime();
     const found = attendance.find(item => item.time === today);
@@ -48,50 +41,15 @@ const CheckinCheckout = () => {
       setCheckoutStatus(found.checkout);
     }
 
-    // Clean up timer
+    // Update time every minute
+    const timer = setInterval(() => {
+      setCurrentDateTime(getCurrentDateTime());
+    }, 60000);
+
     return () => clearInterval(timer);
   }, []);
 
-  // Add time check functions
-  const isWithinCheckinTime = () => {
-    const now = new Date();
-    const [_, __, ___, timeRange] = currentDateTime.split(", ");
-    const [startTime] = timeRange.split(" - ");
-    const [startHour] = startTime.split(":");
-    
-    const classStart = new Date();
-    classStart.setHours(parseInt(startHour), 0, 0);
-    
-    // Can check-in between class start and 30 minutes after
-    const checkinEnd = new Date(classStart);
-    checkinEnd.setMinutes(checkinEnd.getMinutes() + 30);
-    
-    return now >= classStart && now <= checkinEnd;
-  };
-
-  const isWithinCheckoutTime = () => {
-    const now = new Date();
-    const [_, __, ___, timeRange] = currentDateTime.split(", ");
-    const [_, endTime] = timeRange.split(" - ");
-    const [endHour] = endTime.split(":");
-    
-    const classEnd = new Date();
-    classEnd.setHours(parseInt(endHour), 0, 0);
-    
-    // Can check-out between 30 minutes before class end and class end
-    const checkoutStart = new Date(classEnd);
-    checkoutStart.setMinutes(checkoutStart.getMinutes() - 30);
-    
-    return now >= checkoutStart && now <= classEnd;
-  };
-
-  // Modified handle functions
   const handleCheckin = () => {
-    if (!isWithinCheckinTime()) {
-      alert("Check-in is only available within the first 30 minutes of class!");
-      return;
-    }
-
     setModalCaption("Processing check-in...");
     setShowModal(true);
     
@@ -105,11 +63,6 @@ const CheckinCheckout = () => {
   };
 
   const handleCheckout = () => {
-    if (!isWithinCheckoutTime()) {
-      alert("Check-out is only available in the last 30 minutes of class!");
-      return;
-    }
-
     setModalCaption("Processing check-out...");
     setShowModal(true);
     
@@ -125,10 +78,11 @@ const CheckinCheckout = () => {
   const saveAttendance = (type) => {
     let attendance = JSON.parse(localStorage.getItem("attendance_history") || "[]");
     let found = attendance.find(item => item.time === currentDateTime);
+    
     if (!found) {
       found = {
-        subject: currentSubject.name,
-        lecturer: currentSubject.lecturer,
+        subject: currentSubject?.name || "No Subject",
+        lecturer: currentSubject?.lecturer || "No Lecturer",
         time: currentDateTime,
         checkin: "Not Yet",
         checkout: "Not Yet",
@@ -142,39 +96,39 @@ const CheckinCheckout = () => {
     localStorage.setItem("attendance_history", JSON.stringify(attendance));
   };
 
+  if (!currentSubject || !currentDateTime) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
       <div className="flex flex-1">
         <Sidebar />
         <div className="flex-1 p-6 bg-gray-100">
-          {/* Breadcrumb */}
           <nav className="text-sm text-gray-600 mb-4 flex items-center space-x-1">
             <span className="text-gray-400">Home</span>
             <ChevronRight className="w-4 h-4" />
             <span className="text-blue-600 font-medium">Check-in & Check-out</span>
           </nav>
 
-          {/* Page Title */}
           <h2 className="text-3xl font-semibold text-center text-blue-900 mb-10">
             AbsenGo Check-in and Check-out
           </h2>
 
-          {/* Content Wrapper */}
           <div className="flex flex-col items-center justify-center space-y-8 md:flex-row md:space-y-0 md:space-x-12">
-            {/* Card */}
             <div className="bg-white rounded-lg shadow-md p-6 w-[320px]">
               <h3 className="text-blue-600 text-sm font-semibold mb-4">
                 Subject Schedules | Today
               </h3>
               <div className="space-y-2 text-sm text-gray-700">
                 <div>
-                  <span className="font-medium">Subjects: </span>
-                  {currentSubject?.name} {/* Menggunakan currentSubject.name */}
+                  <span className="font-medium">Subject: </span>
+                  {currentSubject.name}
                 </div>
                 <div>
                   <span className="font-medium">Lecturer: </span>
-                  {currentSubject?.lecturer} {/* Menggunakan currentSubject.lecturer */}
+                  {currentSubject.lecturer}
                 </div>
                 <div>
                   <span className="font-medium">Time: </span>
@@ -191,27 +145,19 @@ const CheckinCheckout = () => {
               </div>
             </div>
 
-            {/* Check-in and Check-out Section */}
             <div className="space-y-10 text-center">
               <div>
                 <p className="text-blue-600 font-medium text-lg mb-2">
                   Check-in Verification
                 </p>
-                <p className="text-sm text-gray-500 mb-2">
-                  Available within first 30 minutes of class
-                </p>
                 <button
-                  className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow 
-                    ${checkinStatus === "Done" || !isWithinCheckinTime() ? "opacity-50 cursor-not-allowed" : ""}`}
-                  onClick={() => {
-                    if (checkinStatus === "Done") {
-                      alert("You already checked in.");
-                    } else {
-                      handleCheckin();
-                    }
-                  }}
+                  onClick={handleCheckin}
+                  disabled={checkinStatus === "Done"}
+                  className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow ${
+                    checkinStatus === "Done" ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 >
-                  {checkinStatus === "Done" ? "You already checked in" : "Check-in"}
+                  {checkinStatus === "Done" ? "Already Checked In" : "Check-in"}
                 </button>
               </div>
 
@@ -219,30 +165,23 @@ const CheckinCheckout = () => {
                 <p className="text-blue-600 font-medium text-lg mb-2">
                   Check-out Verification
                 </p>
-                <p className="text-sm text-gray-500 mb-2">
-                  Available in last 30 minutes of class
-                </p>
                 <button
-                  className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow 
-                    ${checkoutStatus === "Done" || !isWithinCheckoutTime() ? "opacity-50 cursor-not-allowed" : ""}`}
-                  onClick={() => {
-                    if (checkoutStatus === "Done") {
-                      alert("You already checked out.");
-                    } else {
-                      handleCheckout();
-                    }
-                  }}
+                  onClick={handleCheckout}
+                  disabled={checkoutStatus === "Done"}
+                  className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow ${
+                    checkoutStatus === "Done" ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 >
-                  {checkoutStatus === "Done" ? "You already checked out" : "Check-out"}
+                  {checkoutStatus === "Done" ? "Already Checked Out" : "Check-out"}
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Modal Loading & Success */}
+          {/* Modal and Success Message */}
           {(showModal || successMsg) && (
-            <div className="fixed inset-0 flex items-center justify-center bg-transparent z-50 transition-opacity duration-300">
-              <div className="bg-white rounded-lg p-8 flex flex-col items-center shadow-lg animate-pop">
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+              <div className="bg-white rounded-lg p-8 flex flex-col items-center">
                 {showModal && (
                   <>
                     <div className="loader mb-4"></div>
@@ -260,30 +199,6 @@ const CheckinCheckout = () => {
               </div>
             </div>
           )}
-          {/* Loader & Pop Up Animation CSS */}
-          <style>
-            {`
-              .loader {
-                border: 4px solid #e0e0e0;
-                border-top: 4px solid #3498db;
-                border-radius: 50%;
-                width: 40px;
-                height: 40px;
-                animation: spin 1s linear infinite;
-              }
-              @keyframes spin {
-                0% { transform: rotate(0deg);}
-                100% { transform: rotate(360deg);}
-              }
-              .animate-pop {
-                animation: pop 0.3s cubic-bezier(0.4,0,0.2,1);
-              }
-              @keyframes pop {
-                0% { transform: scale(0.8); opacity: 0; }
-                100% { transform: scale(1); opacity: 1; }
-              }
-            `}
-          </style>
         </div>
       </div>
     </div>

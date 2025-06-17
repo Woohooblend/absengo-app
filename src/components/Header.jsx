@@ -19,49 +19,79 @@ const Header = () => {
   // Fungsi untuk cek absensi hari ini
   const checkAttendanceNotif = () => {
     const attendance = JSON.parse(localStorage.getItem("attendance_history") || "[]");
-    const today = getCurrentDateTime(); // Use the current date/time format
-
-    let notifList = [];
-    // Find today's attendance
+    const today = getCurrentDateTime();
     const found = attendance.find(item => item.time === today);
 
-    // If both check-in and check-out are done, return empty notifications
-    if (found && found.checkin === "Done" && found.checkout === "Done") {
-      return [];
-    }
+    let notifList = [];
 
     // If no attendance record found, show both notifications
     if (!found) {
-      notifList.push("⏰ You haven't checked in for today's class!");
-      notifList.push("⏰ You haven't checked out for today's class!");
+      notifList.push("⚠️ Don't forget to check-in within 30 minutes after class starts!");
+      notifList.push("⚠️ Remember to check-out 30 minutes before class ends!");
       return notifList;
     }
 
-    // Show specific notifications based on status
+    // Show specific notifications based on status and time
     if (found.checkin !== "Done") {
-      notifList.push("⏰ You haven't checked in for today's class!");
+      notifList.push("⚠️ Check-in period is active - Please check-in!");
     }
     if (found.checkout !== "Done") {
-      notifList.push("⏰ You haven't checked out for today's class!");
+      notifList.push("⚠️ Check-out period is active - Please check-out!");
     }
 
     return notifList;
   };
 
+  // Add verification warning to notifications
+  const checkVerificationNotif = () => {
+    const gpsVerified = localStorage.getItem("gps_verified") === "true";
+    const wifiVerified = localStorage.getItem("wifi_verified") === "true";
+    
+    let notifList = [];
+    if (!gpsVerified) {
+      notifList.push("📍 Please verify your GPS location");
+    }
+    if (!wifiVerified) {
+      notifList.push("📶 Please verify your WiFi connection");
+    }
+    return notifList;
+  };
+
   // Cek otomatis saat halaman dibuka
   useEffect(() => {
-    const notifList = checkAttendanceNotif();
+    const verificationNotifs = checkVerificationNotif();
+    const attendanceNotifs = checkAttendanceNotif();
+    
     setNotifications([
-      ...notifList,
+      ...verificationNotifs,
+      ...attendanceNotifs,
       "🕘 Class \"OOP\" starts in 30 minutes",
       "📋 10 students haven't checked in yet",
       "📢 New announcement from Prof. Linda"
     ]);
-    if (notifList.length > 0) {
+
+    if (verificationNotifs.length > 0) {
       setShowAutoNotif(true);
       // Auto close after 3 seconds
       setTimeout(() => setShowAutoNotif(false), 3000);
     }
+  }, []);
+
+  // Show notification every 5 minutes if not checked in/out
+  useEffect(() => {
+    const checkAndNotify = () => {
+      const notifs = checkAttendanceNotif();
+      if (notifs.length > 0) {
+        setShowAutoNotif(true);
+        setTimeout(() => setShowAutoNotif(false), 3000);
+      }
+    };
+
+    // Check immediately and then every 5 minutes
+    checkAndNotify();
+    const interval = setInterval(checkAndNotify, 300000); // 5 minutes
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleLogout = () => {
