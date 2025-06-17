@@ -54,8 +54,17 @@ const Login = () => {
     );
     if (match) {
       setIsLoggedIn(true);
-      localStorage.setItem("current_user", username); // Tambahkan baris ini
-      navigate("/", { replace: true });
+      localStorage.setItem("current_user", username);
+
+      // Check verification status
+      const gpsVerified = localStorage.getItem("gps_verified") === "true";
+      const wifiVerified = localStorage.getItem("wifi_verified") === "true";
+      
+      if (!gpsVerified || !wifiVerified) {
+        navigate("/verification", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
       setLoginError("");
     } else {
       setLoginError("Your account is not registered.");

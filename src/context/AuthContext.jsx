@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext();
 
@@ -6,47 +7,38 @@ export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
 
-  // Reset verification status every 24 hours
+  // Check verification status
   useEffect(() => {
-    // First, check if we need to reset based on last reset time
+    // Check if verification has expired (24 hours)
     const lastReset = localStorage.getItem("last_verification_reset");
     const now = new Date().getTime();
-
-    if (lastReset && now - parseInt(lastReset) < 86400000) {
-      // If less than 24 hours has passed, don't reset yet
-      return;
-    }
-
-    const resetInterval = setInterval(() => {
-      // Remove verification status from localStorage
+    
+    if (!lastReset || (now - parseInt(lastReset)) >= 86400000) {
+      // Reset verification status
       localStorage.removeItem("gps_verified");
       localStorage.removeItem("wifi_verified");
-
-      // Store the reset time
-      localStorage.setItem("last_verification_reset", new Date().getTime().toString());
-
-      // Update state
+      localStorage.setItem("last_verification_reset", now.toString());
       setIsVerified(false);
-
-      // Notify user if logged in
+      
+      // Show notification if user is logged in
       if (isLoggedIn) {
         alert("Daily verification required. Please verify your location and WiFi connection.");
       }
-    }, 86400000); // 86400000ms = 24 hours
+    }
 
-    // Cleanup interval when component unmounts
-    return () => clearInterval(resetInterval);
+    // Check current verification status
+    const gpsVerified = localStorage.getItem("gps_verified") === "true";
+    const wifiVerified = localStorage.getItem("wifi_verified") === "true";
+    setIsVerified(gpsVerified && wifiVerified);
   }, [isLoggedIn]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        isLoggedIn,
-        setIsLoggedIn,
-        isVerified,
-        setIsVerified,
-      }}
-    >
+    <AuthContext.Provider value={{ 
+      isLoggedIn, 
+      setIsLoggedIn,
+      isVerified,
+      setIsVerified
+    }}>
       {children}
     </AuthContext.Provider>
   );
