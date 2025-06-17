@@ -52,7 +52,46 @@ const CheckinCheckout = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // Add time check functions
+  const isWithinCheckinTime = () => {
+    const now = new Date();
+    const [_, __, ___, timeRange] = currentDateTime.split(", ");
+    const [startTime] = timeRange.split(" - ");
+    const [startHour] = startTime.split(":");
+    
+    const classStart = new Date();
+    classStart.setHours(parseInt(startHour), 0, 0);
+    
+    // Can check-in between class start and 30 minutes after
+    const checkinEnd = new Date(classStart);
+    checkinEnd.setMinutes(checkinEnd.getMinutes() + 30);
+    
+    return now >= classStart && now <= checkinEnd;
+  };
+
+  const isWithinCheckoutTime = () => {
+    const now = new Date();
+    const [_, __, ___, timeRange] = currentDateTime.split(", ");
+    const [_, endTime] = timeRange.split(" - ");
+    const [endHour] = endTime.split(":");
+    
+    const classEnd = new Date();
+    classEnd.setHours(parseInt(endHour), 0, 0);
+    
+    // Can check-out between 30 minutes before class end and class end
+    const checkoutStart = new Date(classEnd);
+    checkoutStart.setMinutes(checkoutStart.getMinutes() - 30);
+    
+    return now >= checkoutStart && now <= classEnd;
+  };
+
+  // Modified handle functions
   const handleCheckin = () => {
+    if (!isWithinCheckinTime()) {
+      alert("Check-in is only available within the first 30 minutes of class!");
+      return;
+    }
+
     setModalCaption("Processing check-in...");
     setShowModal(true);
     
@@ -66,6 +105,11 @@ const CheckinCheckout = () => {
   };
 
   const handleCheckout = () => {
+    if (!isWithinCheckoutTime()) {
+      alert("Check-out is only available in the last 30 minutes of class!");
+      return;
+    }
+
     setModalCaption("Processing check-out...");
     setShowModal(true);
     
@@ -153,8 +197,12 @@ const CheckinCheckout = () => {
                 <p className="text-blue-600 font-medium text-lg mb-2">
                   Check-in Verification
                 </p>
+                <p className="text-sm text-gray-500 mb-2">
+                  Available within first 30 minutes of class
+                </p>
                 <button
-                  className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow ${checkinStatus === "Done" ? "opacity-50 cursor-not-allowed" : ""}`}
+                  className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow 
+                    ${checkinStatus === "Done" || !isWithinCheckinTime() ? "opacity-50 cursor-not-allowed" : ""}`}
                   onClick={() => {
                     if (checkinStatus === "Done") {
                       alert("You already checked in.");
@@ -171,8 +219,12 @@ const CheckinCheckout = () => {
                 <p className="text-blue-600 font-medium text-lg mb-2">
                   Check-out Verification
                 </p>
+                <p className="text-sm text-gray-500 mb-2">
+                  Available in last 30 minutes of class
+                </p>
                 <button
-                  className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow ${checkoutStatus === "Done" ? "opacity-50 cursor-not-allowed" : ""}`}
+                  className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow 
+                    ${checkoutStatus === "Done" || !isWithinCheckoutTime() ? "opacity-50 cursor-not-allowed" : ""}`}
                   onClick={() => {
                     if (checkoutStatus === "Done") {
                       alert("You already checked out.");
