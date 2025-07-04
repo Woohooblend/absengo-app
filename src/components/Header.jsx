@@ -4,6 +4,16 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { getCurrentDateTime } from "../utils/subjects"; // Import the getCurrentDateTime function
 
+// Tambahkan helper untuk parsing jam kelas
+const parseTime = (dateTimeStr) => {
+  const match = dateTimeStr.match(/(\d{1,2}):00 - (\d{1,2}):00/);
+  if (!match) return null;
+  return {
+    startHour: parseInt(match[1], 10),
+    endHour: parseInt(match[2], 10)
+  };
+};
+
 const Header = () => {
   const { setIsLoggedIn } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -24,10 +34,31 @@ const Header = () => {
 
     let notifList = [];
 
+    // Cek window waktu check-in/check-out
+    const now = new Date();
+    const { startHour, endHour } = parseTime(today) || {};
+    if (startHour != null && endHour != null) {
+      const classStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, 0, 0, 0);
+      const classEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, 0, 0, 0);
+      const checkinOpen = classStart;
+      const checkinClose = new Date(classStart.getTime() + 10 * 60000);
+      const checkoutOpen = new Date(classEnd.getTime() - 10 * 60000);
+      const checkoutClose = classEnd;
+
+      // Notifikasi check-in
+      if ((!found || found.checkin !== "Done") && now >= checkinOpen && now <= checkinClose) {
+        notifList.push("⚠️ Check-in is open! Please check-in within 10 minutes after class starts.");
+      }
+      // Notifikasi check-out
+      if (found && found.checkin === "Done" && found.checkout !== "Done" && now >= checkoutOpen && now <= checkoutClose) {
+        notifList.push("⚠️ Check-out is open! Please check-out within 10 minutes before class ends.");
+      }
+    }
+
     // If no attendance record found, show both notifications
     if (!found) {
-      notifList.push("⚠️ Don't forget to check-in within 30 minutes after class starts!");
-      notifList.push("⚠️ Remember to check-out 30 minutes before class ends!");
+      notifList.push("⚠️ Don't forget to check-in within 10 minutes after class starts!");
+      notifList.push("⚠️ Remember to check-out 10 minutes before class ends!");
       return notifList;
     }
 

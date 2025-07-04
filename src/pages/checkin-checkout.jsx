@@ -12,6 +12,20 @@ const CheckinCheckout = () => {
   const [currentDateTime, setCurrentDateTime] = useState("");
   const [checkinStatus, setCheckinStatus] = useState("Not Yet");
   const [checkoutStatus, setCheckoutStatus] = useState("Not Yet");
+  const [canCheckin, setCanCheckin] = useState(false);
+  const [canCheckout, setCanCheckout] = useState(false);
+  const [autoNotif, setAutoNotif] = useState(""); // for auto notification
+
+  // Helper to parse time from getCurrentDateTime string
+  const parseTime = (dateTimeStr) => {
+    // Example: "7 Jun, Fri, 10:00 - 12:00"
+    const match = dateTimeStr.match(/(\d{1,2}):00 - (\d{1,2}):00/);
+    if (!match) return null;
+    return {
+      startHour: parseInt(match[1], 10),
+      endHour: parseInt(match[2], 10)
+    };
+  };
 
   // Load initial data
   useEffect(() => {
@@ -48,6 +62,49 @@ const CheckinCheckout = () => {
 
     return () => clearInterval(timer);
   }, []);
+
+  // Update check-in/check-out window every minute
+  useEffect(() => {
+    if (!currentDateTime) return;
+    const now = new Date();
+    const { startHour, endHour } = parseTime(currentDateTime) || {};
+    if (startHour == null || endHour == null) {
+      setCanCheckin(false);
+      setCanCheckout(false);
+      return;
+    }
+    // Build today's date with class start/end
+    const classStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, 0, 0, 0);
+    const classEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, 0, 0, 0);
+
+    // Check-in: allowed from classStart to classStart+10min
+    const checkinOpen = classStart;
+    const checkinClose = new Date(classStart.getTime() + 10 * 60000);
+
+    // Check-out: allowed from classEnd-10min to classEnd
+    const checkoutOpen = new Date(classEnd.getTime() - 10 * 60000);
+    const checkoutClose = classEnd;
+
+    setCanCheckin(now >= checkinOpen && now <= checkinClose);
+    setCanCheckout(now >= checkoutOpen && now <= checkoutClose);
+  }, [currentDateTime]);
+
+  // Auto notification for check-in/check-out
+  useEffect(() => {
+    if (!currentDateTime) return;
+    let notif = "";
+    if (checkinStatus !== "Done" && canCheckin) {
+      notif = "⚠️ Check-in is open! Please check-in within 10 minutes after class starts.";
+    } else if (checkoutStatus !== "Done" && canCheckout) {
+      notif = "⚠️ Check-out is open! Please check-out within 10 minutes before class ends.";
+    }
+    setAutoNotif(notif);
+
+    if (notif) {
+      const timer = setTimeout(() => setAutoNotif(""), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [canCheckin, canCheckout, checkinStatus, checkoutStatus, currentDateTime]);
 
   const handleCheckin = () => {
     setModalCaption("Processing check-in...");
@@ -152,13 +209,22 @@ const CheckinCheckout = () => {
                 </p>
                 <button
                   onClick={handleCheckin}
-                  disabled={checkinStatus === "Done"}
+                  disabled={checkinStatus === "Done" || !canCheckin}
                   className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow ${
-                    checkinStatus === "Done" ? "opacity-50 cursor-not-allowed" : ""
+                    checkinStatus === "Done" || !canCheckin ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                 >
-                  {checkinStatus === "Done" ? "Already Checked In" : "Check-in"}
+                  {checkinStatus === "Done"
+                    ? "Already Checked In"
+                    : !canCheckin
+                      ? "Check-in not available"
+                      : "Check-in"}
                 </button>
+                {!canCheckin && checkinStatus !== "Done" && (
+                  <div className="text-xs text-red-500 mt-1">
+                    Check-in only available within 10 minutes after class starts.
+                  </div>
+                )}
               </div>
 
               <div>
@@ -167,16 +233,32 @@ const CheckinCheckout = () => {
                 </p>
                 <button
                   onClick={handleCheckout}
-                  disabled={checkoutStatus === "Done"}
+                  disabled={checkoutStatus === "Done" || !canCheckout}
                   className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow ${
-                    checkoutStatus === "Done" ? "opacity-50 cursor-not-allowed" : ""
+                    checkoutStatus === "Done" || !canCheckout ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                 >
-                  {checkoutStatus === "Done" ? "Already Checked Out" : "Check-out"}
+                  {checkoutStatus === "Done"
+                    ? "Already Checked Out"
+                    : !canCheckout
+                      ? "Check-out not available"
+                      : "Check-out"}
                 </button>
+                {!canCheckout && checkoutStatus !== "Done" && (
+                  <div className="text-xs text-red-500 mt-1">
+                    Check-out only available within 10 minutes before class ends.
+                  </div>
+                )}
               </div>
             </div>
           </div>
+
+          {/* Auto Notification */}
+          {autoNotif && (
+            <div className="fixed top-20 right-8 z-50 bg-blue-100 border border-blue-300 text-blue-800 px-6 py-3 rounded shadow animate-pop">
+              {autoNotif}
+            </div>
+          )}
 
           {/* Modal and Success Message */}
           {(showModal || successMsg) && (
