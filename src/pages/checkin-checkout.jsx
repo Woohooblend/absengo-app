@@ -15,6 +15,7 @@ const CheckinCheckout = () => {
   const [canCheckin, setCanCheckin] = useState(false);
   const [canCheckout, setCanCheckout] = useState(false);
   const [autoNotif, setAutoNotif] = useState(""); // for auto notification
+  const [isVerified, setIsVerified] = useState(false);
 
   // Helper to parse time from getCurrentDateTime string
   const parseTime = (dateTimeStr) => {
@@ -54,6 +55,11 @@ const CheckinCheckout = () => {
       setCheckinStatus(found.checkin);
       setCheckoutStatus(found.checkout);
     }
+
+    // Cek status verifikasi
+    const gpsVerified = localStorage.getItem("gps_verified") === "true";
+    const wifiVerified = localStorage.getItem("wifi_verified") === "true";
+    setIsVerified(gpsVerified && wifiVerified);
 
     // Update time every minute
     const timer = setInterval(() => {
@@ -107,6 +113,11 @@ const CheckinCheckout = () => {
   }, [canCheckin, canCheckout, checkinStatus, checkoutStatus, currentDateTime]);
 
   const handleCheckin = () => {
+    if (!isVerified) {
+      setAutoNotif("⚠️ Please complete GPS and WiFi verification before check-in.");
+      setTimeout(() => setAutoNotif(""), 4000);
+      return;
+    }
     setModalCaption("Processing check-in...");
     setShowModal(true);
     
@@ -120,6 +131,11 @@ const CheckinCheckout = () => {
   };
 
   const handleCheckout = () => {
+    if (!isVerified) {
+      setAutoNotif("⚠️ Please complete GPS and WiFi verification before check-out.");
+      setTimeout(() => setAutoNotif(""), 4000);
+      return;
+    }
     setModalCaption("Processing check-out...");
     setShowModal(true);
     
@@ -209,18 +225,25 @@ const CheckinCheckout = () => {
                 </p>
                 <button
                   onClick={handleCheckin}
-                  disabled={checkinStatus === "Done" || !canCheckin}
+                  disabled={checkinStatus === "Done" || !canCheckin || !isVerified}
                   className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow ${
-                    checkinStatus === "Done" || !canCheckin ? "opacity-50 cursor-not-allowed" : ""
+                    checkinStatus === "Done" || !canCheckin || !isVerified ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                 >
                   {checkinStatus === "Done"
                     ? "Already Checked In"
-                    : !canCheckin
-                      ? "Check-in not available"
-                      : "Check-in"}
+                    : !isVerified
+                      ? "Verify First"
+                      : !canCheckin
+                        ? "Check-in not available"
+                        : "Check-in"}
                 </button>
-                {!canCheckin && checkinStatus !== "Done" && (
+                {!isVerified && (
+                  <div className="text-xs text-red-500 mt-1">
+                    Please complete GPS and WiFi verification first.
+                  </div>
+                )}
+                {!canCheckin && checkinStatus !== "Done" && isVerified && (
                   <div className="text-xs text-red-500 mt-1">
                     Check-in only available within 10 minutes after class starts.
                   </div>
@@ -233,18 +256,25 @@ const CheckinCheckout = () => {
                 </p>
                 <button
                   onClick={handleCheckout}
-                  disabled={checkoutStatus === "Done" || !canCheckout}
+                  disabled={checkoutStatus === "Done" || !canCheckout || !isVerified}
                   className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow ${
-                    checkoutStatus === "Done" || !canCheckout ? "opacity-50 cursor-not-allowed" : ""
+                    checkoutStatus === "Done" || !canCheckout || !isVerified ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                 >
                   {checkoutStatus === "Done"
                     ? "Already Checked Out"
-                    : !canCheckout
-                      ? "Check-out not available"
-                      : "Check-out"}
+                    : !isVerified
+                      ? "Verify First"
+                      : !canCheckout
+                        ? "Check-out not available"
+                        : "Check-out"}
                 </button>
-                {!canCheckout && checkoutStatus !== "Done" && (
+                {!isVerified && (
+                  <div className="text-xs text-red-500 mt-1">
+                    Please complete GPS and WiFi verification first.
+                  </div>
+                )}
+                {!canCheckout && checkoutStatus !== "Done" && isVerified && (
                   <div className="text-xs text-red-500 mt-1">
                     Check-out only available within 10 minutes before class ends.
                   </div>
