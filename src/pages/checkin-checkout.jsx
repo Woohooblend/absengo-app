@@ -1,77 +1,177 @@
+import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { getRandomSubject, getCurrentDateTime } from "../utils/subjects";
 
 const CheckinCheckout = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalCaption, setModalCaption] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [currentSubject, setCurrentSubject] = useState(null);
+  const [currentDateTime, setCurrentDateTime] = useState("");
+  const [checkinStatus, setCheckinStatus] = useState("Not Yet");
+  const [checkoutStatus, setCheckoutStatus] = useState("Not Yet");
+  const [canCheckin, setCanCheckin] = useState(false);
+  const [canCheckout, setCanCheckout] = useState(false);
+  const [autoNotif, setAutoNotif] = useState(""); // for auto notification
+  const [isVerified, setIsVerified] = useState(false);
 
-  // Ambil data absensi hari ini dari localStorage
-  const today = "3 Sept, Tue, 09:00 - 11:00";
-  const attendance = JSON.parse(localStorage.getItem("attendance_history") || "[]");
-  let found = attendance.find(item => item.time === today);
+  // Helper to parse time from getCurrentDateTime string
+  const parseTime = (dateTimeStr) => {
+    // Example: "7 Jun, Fri, 10:00 - 12:00"
+    const match = dateTimeStr.match(/(\d{1,2}):00 - (\d{1,2}):00/);
+    if (!match) return null;
+    return {
+      startHour: parseInt(match[1], 10),
+      endHour: parseInt(match[2], 10)
+    };
+  };
 
-  // Jika belum ada data absensi hari ini, status awal "Not Yet"
-  const checkinStatus = found ? found.checkin : "Not Yet";
-  const checkoutStatus = found ? found.checkout : "Not Yet";
-  const alreadyCheckedIn = checkinStatus === "Done";
-  const alreadyCheckedOut = checkoutStatus === "Done";
+  // Load initial data
+  useEffect(() => {
+    // Get today's subject from localStorage or generate new one
+    const lastSubjectUpdate = localStorage.getItem("last_subject_update");
+    const now = new Date().getTime();
+    
+    let todaySubject;
+    if (!lastSubjectUpdate || (now - parseInt(lastSubjectUpdate)) >= 86400000) {
+      todaySubject = getRandomSubject();
+      localStorage.setItem("today_subject", JSON.stringify(todaySubject));
+      localStorage.setItem("last_subject_update", now.toString());
+    } else {
+      todaySubject = JSON.parse(localStorage.getItem("today_subject"));
+    }
+
+    // Set initial states
+    setCurrentSubject(todaySubject);
+    setCurrentDateTime(getCurrentDateTime());
+
+    // Load attendance status
+    const attendance = JSON.parse(localStorage.getItem("attendance_history") || "[]");
+    const today = getCurrentDateTime();
+    const found = attendance.find(item => item.time === today);
+    if (found) {
+      setCheckinStatus(found.checkin);
+      setCheckoutStatus(found.checkout);
+    }
+
+    // Cek status verifikasi
+    const gpsVerified = localStorage.getItem("gps_verified") === "true";
+    const wifiVerified = localStorage.getItem("wifi_verified") === "true";
+    setIsVerified(gpsVerified && wifiVerified);
+
+    // Update time every minute
+    const timer = setInterval(() => {
+      setCurrentDateTime(getCurrentDateTime());
+    }, 60000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Update check-in/check-out window every minute
+  useEffect(() => {
+    if (!currentDateTime) return;
+    const now = new Date();
+    const { startHour, endHour } = parseTime(currentDateTime) || {};
+    if (startHour == null || endHour == null) {
+      setCanCheckin(false);
+      setCanCheckout(false);
+      return;
+    }
+    // Build today's date with class start/end
+    const classStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, 0, 0, 0);
+    const classEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, 0, 0, 0);
+
+    // Check-in: allowed from classStart to classStart+10min
+    const checkinOpen = classStart;
+    const checkinClose = new Date(classStart.getTime() + 10 * 60000);
+
+    // Check-out: allowed from classEnd-10min to classEnd
+    const checkoutOpen = new Date(classEnd.getTime() - 10 * 60000);
+    const checkoutClose = classEnd;
+
+    setCanCheckin(now >= checkinOpen && now <= checkinClose);
+    setCanCheckout(now >= checkoutOpen && now <= checkoutClose);
+  }, [currentDateTime]);
+
+  // Auto notification for check-in/check-out
+  useEffect(() => {
+    if (!currentDateTime) return;
+    let notif = "";
+    if (checkinStatus !== "Done" && canCheckin) {
+      notif = "⚠️ Check-in is open! Please check-in within 10 minutes after class starts.";
+    } else if (checkoutStatus !== "Done" && canCheckout) {
+      notif = "⚠️ Check-out is open! Please check-out within 10 minutes before class ends.";
+    }
+    setAutoNotif(notif);
+
+    if (notif) {
+      const timer = setTimeout(() => setAutoNotif(""), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [canCheckin, canCheckout, checkinStatus, checkoutStatus, currentDateTime]);
+
+  const handleCheckin = () => {
+    if (!isVerified) {
+      setAutoNotif("⚠️ Please complete GPS and WiFi verification before check-in.");
+      setTimeout(() => setAutoNotif(""), 4000);
+      return;
+    }
+    setModalCaption("Processing check-in...");
+    setShowModal(true);
+    
+    setTimeout(() => {
+      setShowModal(false);
+      setSuccessMsg("Successfully checked in!");
+      saveAttendance("checkin");
+      setCheckinStatus("Done");
+      setTimeout(() => setSuccessMsg(""), 1500);
+    }, 1500);
+  };
+
+  const handleCheckout = () => {
+    if (!isVerified) {
+      setAutoNotif("⚠️ Please complete GPS and WiFi verification before check-out.");
+      setTimeout(() => setAutoNotif(""), 4000);
+      return;
+    }
+    setModalCaption("Processing check-out...");
+    setShowModal(true);
+    
+    setTimeout(() => {
+      setShowModal(false);
+      setSuccessMsg("Successfully checked out!");
+      saveAttendance("checkout");
+      setCheckoutStatus("Done");
+      setTimeout(() => setSuccessMsg(""), 1500);
+    }, 1500);
+  };
 
   const saveAttendance = (type) => {
     let attendance = JSON.parse(localStorage.getItem("attendance_history") || "[]");
-    let found = attendance.find(item => item.time === today);
+    let found = attendance.find(item => item.time === currentDateTime);
+    
     if (!found) {
       found = {
-        subject: "Algorithm and Programming",
-        lecturer: "Prof. A",
-        time: today,
+        subject: currentSubject?.name || "No Subject",
+        lecturer: currentSubject?.lecturer || "No Lecturer",
+        time: currentDateTime,
         checkin: "Not Yet",
         checkout: "Not Yet",
       };
       attendance.push(found);
     }
+    
     if (type === "checkin") found.checkin = "Done";
     if (type === "checkout") found.checkout = "Done";
+    
     localStorage.setItem("attendance_history", JSON.stringify(attendance));
   };
 
-  const handleCheckin = () => {
-    const gpsVerified = localStorage.getItem("gps_verified") === "true";
-    const wifiVerified = localStorage.getItem("wifi_verified") === "true";
-    if (!gpsVerified || !wifiVerified) {
-      alert("Please complete GPS and WiFi verification first on the Verification page.");
-      return;
-    }
-    setModalCaption("Checking in...");
-    setShowModal(true);
-    setSuccessMsg("");
-    setTimeout(() => {
-      setShowModal(false);
-      setSuccessMsg("You have successfully checked in!");
-      saveAttendance("checkin");
-      setTimeout(() => setSuccessMsg(""), 1500); // reload to update status
-    }, 1500);
-  };
-
-  const handleCheckout = () => {
-    const gpsVerified = localStorage.getItem("gps_verified") === "true";
-    const wifiVerified = localStorage.getItem("wifi_verified") === "true";
-    if (!gpsVerified || !wifiVerified) {
-      alert("Please complete GPS and WiFi verification first on the Verification page.");
-      return;
-    }
-    setModalCaption("Checking out...");
-    setShowModal(true);
-    setSuccessMsg("");
-    setTimeout(() => {
-      setShowModal(false);
-      setSuccessMsg("You have successfully checked out!");
-      saveAttendance("checkout");
-      setTimeout(() => setSuccessMsg(""), 1500); // reload to update status
-    }, 1500);
-  };
+  if (!currentSubject || !currentDateTime) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -79,37 +179,33 @@ const CheckinCheckout = () => {
       <div className="flex flex-1">
         <Sidebar />
         <div className="flex-1 p-6 bg-gray-100">
-          {/* Breadcrumb */}
           <nav className="text-sm text-gray-600 mb-4 flex items-center space-x-1">
             <span className="text-gray-400">Home</span>
             <ChevronRight className="w-4 h-4" />
             <span className="text-blue-600 font-medium">Check-in & Check-out</span>
           </nav>
 
-          {/* Page Title */}
           <h2 className="text-3xl font-semibold text-center text-blue-900 mb-10">
             AbsenGo Check-in and Check-out
           </h2>
 
-          {/* Content Wrapper */}
           <div className="flex flex-col items-center justify-center space-y-8 md:flex-row md:space-y-0 md:space-x-12">
-            {/* Card */}
             <div className="bg-white rounded-lg shadow-md p-6 w-[320px]">
               <h3 className="text-blue-600 text-sm font-semibold mb-4">
                 Subject Schedules | Today
               </h3>
               <div className="space-y-2 text-sm text-gray-700">
                 <div>
-                  <span className="font-medium">Subjects: </span>
-                  Algorithm and Programming
+                  <span className="font-medium">Subject: </span>
+                  {currentSubject.name}
                 </div>
                 <div>
                   <span className="font-medium">Lecturer: </span>
-                  Prof. A
+                  {currentSubject.lecturer}
                 </div>
                 <div>
                   <span className="font-medium">Time: </span>
-                  {today}
+                  {currentDateTime}
                 </div>
                 <div>
                   <span className="font-medium">Check-in Status: </span>
@@ -122,24 +218,36 @@ const CheckinCheckout = () => {
               </div>
             </div>
 
-            {/* Check-in and Check-out Section */}
             <div className="space-y-10 text-center">
               <div>
                 <p className="text-blue-600 font-medium text-lg mb-2">
                   Check-in Verification
                 </p>
                 <button
-                  className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow ${alreadyCheckedIn ? "opacity-50 cursor-not-allowed" : ""}`}
-                  onClick={() => {
-                    if (alreadyCheckedIn) {
-                      alert("You already checked in.");
-                    } else {
-                      handleCheckin();
-                    }
-                  }}
+                  onClick={handleCheckin}
+                  disabled={checkinStatus === "Done" || !canCheckin || !isVerified}
+                  className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow ${
+                    checkinStatus === "Done" || !canCheckin || !isVerified ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 >
-                  {alreadyCheckedIn ? "You already checked in" : "Check-in"}
+                  {checkinStatus === "Done"
+                    ? "Already Checked In"
+                    : !isVerified
+                      ? "Verify First"
+                      : !canCheckin
+                        ? "Check-in not available"
+                        : "Check-in"}
                 </button>
+                {!isVerified && (
+                  <div className="text-xs text-red-500 mt-1">
+                    Please complete GPS and WiFi verification first.
+                  </div>
+                )}
+                {!canCheckin && checkinStatus !== "Done" && isVerified && (
+                  <div className="text-xs text-red-500 mt-1">
+                    Check-in only available within 10 minutes after class starts.
+                  </div>
+                )}
               </div>
 
               <div>
@@ -147,25 +255,45 @@ const CheckinCheckout = () => {
                   Check-out Verification
                 </p>
                 <button
-                  className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow ${alreadyCheckedOut ? "opacity-50 cursor-not-allowed" : ""}`}
-                  onClick={() => {
-                    if (alreadyCheckedOut) {
-                      alert("You already checked out.");
-                    } else {
-                      handleCheckout();
-                    }
-                  }}
+                  onClick={handleCheckout}
+                  disabled={checkoutStatus === "Done" || !canCheckout || !isVerified}
+                  className={`bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-6 rounded shadow ${
+                    checkoutStatus === "Done" || !canCheckout || !isVerified ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 >
-                  {alreadyCheckedOut ? "You already checked out" : "Check-out"}
+                  {checkoutStatus === "Done"
+                    ? "Already Checked Out"
+                    : !isVerified
+                      ? "Verify First"
+                      : !canCheckout
+                        ? "Check-out not available"
+                        : "Check-out"}
                 </button>
+                {!isVerified && (
+                  <div className="text-xs text-red-500 mt-1">
+                    Please complete GPS and WiFi verification first.
+                  </div>
+                )}
+                {!canCheckout && checkoutStatus !== "Done" && isVerified && (
+                  <div className="text-xs text-red-500 mt-1">
+                    Check-out only available within 10 minutes before class ends.
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Modal Loading & Success */}
+          {/* Auto Notification */}
+          {autoNotif && (
+            <div className="fixed top-20 right-8 z-50 bg-blue-100 border border-blue-300 text-blue-800 px-6 py-3 rounded shadow animate-pop">
+              {autoNotif}
+            </div>
+          )}
+
+          {/* Modal and Success Message */}
           {(showModal || successMsg) && (
-            <div className="fixed inset-0 flex items-center justify-center bg-transparent z-50 transition-opacity duration-300">
-              <div className="bg-white rounded-lg p-8 flex flex-col items-center shadow-lg animate-pop">
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+              <div className="bg-white rounded-lg p-8 flex flex-col items-center">
                 {showModal && (
                   <>
                     <div className="loader mb-4"></div>
@@ -183,30 +311,6 @@ const CheckinCheckout = () => {
               </div>
             </div>
           )}
-          {/* Loader & Pop Up Animation CSS */}
-          <style>
-            {`
-              .loader {
-                border: 4px solid #e0e0e0;
-                border-top: 4px solid #3498db;
-                border-radius: 50%;
-                width: 40px;
-                height: 40px;
-                animation: spin 1s linear infinite;
-              }
-              @keyframes spin {
-                0% { transform: rotate(0deg);}
-                100% { transform: rotate(360deg);}
-              }
-              .animate-pop {
-                animation: pop 0.3s cubic-bezier(0.4,0,0.2,1);
-              }
-              @keyframes pop {
-                0% { transform: scale(0.8); opacity: 0; }
-                100% { transform: scale(1); opacity: 1; }
-              }
-            `}
-          </style>
         </div>
       </div>
     </div>

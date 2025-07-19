@@ -38,35 +38,92 @@ const Login = () => {
         (acc) => acc.username === signupUsername
       );
       if (!exists) {
-        const updated = [...storedAccounts, { username: signupUsername, password: signupPassword }];
+        // Create new user with clean slate
+        const newUser = {
+          username: signupUsername,
+          password: signupPassword,
+          isNewUser: true,
+          verifications: {
+            gps: false,
+            wifi: false
+          },
+          attendanceHistory: []
+        };
+        
+        const updated = [...storedAccounts, newUser];
         setStoredAccounts(updated);
+        localStorage.setItem("accounts", JSON.stringify(updated));
+        
         setSignupUsername("");
         setSignupPassword("");
         setIsSigningUp(false);
-        alert("Registration successful! Please log in.");
+        alert("Registration successful! Please log in and complete verification.");
       } else {
         alert("Username already registered. Please log in.");
       }
     }
   };
 
-  const handleLogin = async () => {
-    setIsLoading(true);
-    try {
-      const result = await login(username, password);
-      localStorage.setItem("token", result.key);
+  const handleLogin = () => {
+    const match = storedAccounts.find(
+      (acc) => acc.username === username && acc.password === password
+    );
+    
+    if (match) {
       setIsLoggedIn(true);
-      localStorage.setItem("current_user", username); // Tambahkan baris ini
+      localStorage.setItem("current_user", username);
+      
+      // Set user-specific verification status
+      localStorage.setItem("gps_verified", match.verifications?.gps || "false");
+      localStorage.setItem("wifi_verified", match.verifications?.wifi || "false");
+      
+      // Set user-specific attendance history
+      localStorage.setItem("attendance_history", JSON.stringify(match.attendanceHistory || []));
+      
+      if (match.isNewUser) {
+        alert("Welcome! Please complete your GPS and WiFi verification in the Verification page.");
+        // Update user to remove new user status but keep other data
+        const updatedAccounts = storedAccounts.map(acc => 
+          acc.username === username ? { ...acc, isNewUser: false } : acc
+        );
+        setStoredAccounts(updatedAccounts);
+        localStorage.setItem("accounts", JSON.stringify(updatedAccounts));
+      }
+      
       navigate("/", { replace: true });
-      setLoginError("");
-    } catch (err) {
-      setLoginError("Invalid username or password");
-    } finally {
-      setIsLoading(false);
+    } else {
+      setLoginError("Your account is not registered.");
     }
   };
 
+  // Add a logout handler that saves user data before logging out
   const handleLogout = () => {
+    const currentUser = localStorage.getItem("current_user");
+    if (currentUser) {
+      // Save current user's verification and attendance data
+      const updatedAccounts = storedAccounts.map(acc => {
+        if (acc.username === currentUser) {
+          return {
+            ...acc,
+            verifications: {
+              gps: localStorage.getItem("gps_verified") === "true",
+              wifi: localStorage.getItem("wifi_verified") === "true"
+            },
+            attendanceHistory: JSON.parse(localStorage.getItem("attendance_history") || "[]")
+          };
+        }
+        return acc;
+      });
+      setStoredAccounts(updatedAccounts);
+      localStorage.setItem("accounts", JSON.stringify(updatedAccounts));
+    }
+    
+    // Clear all user-specific data
+    localStorage.removeItem("current_user");
+    localStorage.removeItem("gps_verified");
+    localStorage.removeItem("wifi_verified");
+    localStorage.removeItem("attendance_history");
+    
     setIsLoggedIn(false);
     setUsername("");
     setPassword("");
