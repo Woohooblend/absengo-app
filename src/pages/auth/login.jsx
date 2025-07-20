@@ -79,13 +79,13 @@ const Login = () => {
       localStorage.setItem("current_user", username);
       
       // Set user-specific verification status
-      localStorage.setItem("gps_verified", match.verifications?.gps || "false");
-      localStorage.setItem("wifi_verified", match.verifications?.wifi || "false");
+      localStorage.setItem("gps_verified", match?.verifications?.gps || "false");
+      localStorage.setItem("wifi_verified", match?.verifications?.wifi || "false");
       
       // Set user-specific attendance history
-      localStorage.setItem("attendance_history", JSON.stringify(match.attendanceHistory || []));
+      localStorage.setItem("attendance_history", JSON.stringify(match?.attendanceHistory || []));
       
-      if (match.isNewUser) {
+      if (!match) {
         alert("Welcome! Please complete your GPS and WiFi verification in the Verification page.");
         // Update user to remove new user status but keep other data
         const updatedAccounts = storedAccounts.map(acc => 
