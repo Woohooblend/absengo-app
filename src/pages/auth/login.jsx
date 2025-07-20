@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { login } from "../../api/auth";
+import { login, register } from "../../api/auth";
 
 const Login = () => {
   const [isSigningUp, setIsSigningUp] = useState(false);
@@ -32,12 +32,12 @@ const Login = () => {
     localStorage.setItem("accounts", JSON.stringify(storedAccounts));
   }, [storedAccounts]);
 
-  const handleSignup = () => {
-    if (signupUsername && signupPassword) {
-      const exists = storedAccounts.find(
-        (acc) => acc.username === signupUsername
-      );
-      if (!exists) {
+  const handleSignup = async() => {
+    setIsLoading(true);
+    try {
+      console.log(signupUsername, signupPassword)
+      if (signupUsername && signupPassword) {
+        await register(signupUsername, "", signupPassword);
         // Create new user with clean slate
         const newUser = {
           username: signupUsername,
@@ -58,18 +58,23 @@ const Login = () => {
         setSignupPassword("");
         setIsSigningUp(false);
         alert("Registration successful! Please log in and complete verification.");
-      } else {
-        alert("Username already registered. Please log in.");
       }
+    } catch (error) {
+      console.error(error)
+      alert("Username already registered. Please log in.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleLogin = () => {
-    const match = storedAccounts.find(
-      (acc) => acc.username === username && acc.password === password
-    );
-    
-    if (match) {
+  const handleLogin = async () => {
+    setIsLoading(true);
+    try {
+      const result = await login(username, password);
+      localStorage.setItem("token", result.key);
+      const match = storedAccounts.find(
+        (acc) => acc.username === username && acc.password === password
+      );
       setIsLoggedIn(true);
       localStorage.setItem("current_user", username);
       
@@ -91,8 +96,10 @@ const Login = () => {
       }
       
       navigate("/", { replace: true });
-    } else {
-      setLoginError("Your account is not registered.");
+    } catch (error) {
+      setLoginError("Invalid username or password");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -199,9 +206,10 @@ const Login = () => {
               />
               <button
                 onClick={handleSignup}
-                className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-md transition"
+                disabled={isLoading}
+                className={`w-full py-2 ${isLoading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'} text-white font-semibold rounded-md shadow-md transition`}
               >
-                Sign Up
+                {isLoading ? 'Loading...' : 'Sign Up'}
               </button>
               <button
                 onClick={() => setIsSigningUp(false)}

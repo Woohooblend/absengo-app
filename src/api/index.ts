@@ -17,4 +17,10 @@ api.interceptors.request.use(
   error => Promise.reject(error)
 );
 
+// Fetch all sessions (classes)
+export async function fetchSessions() {
+  const response = await api.get('/sessions');
+  return response.data;
+}
+
 export default api;
