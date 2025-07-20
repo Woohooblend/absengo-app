@@ -97,6 +97,7 @@ const Login = () => {
       
       navigate("/", { replace: true });
     } catch (error) {
+      console.error(error)
       setLoginError("Invalid username or password");
     } finally {
       setIsLoading(false);
