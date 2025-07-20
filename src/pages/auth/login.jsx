@@ -186,8 +186,7 @@ const Login = () => {
           Absen<span className="text-blue-600">Go</span>
         </h1>
 
-        {!isLoggedIn ? (
-          isSigningUp ? (
+        {isSigningUp ? (
             <div className="space-y-4">
               <h2 className="text-xl font-semibold text-gray-700 text-center">Create Your Account</h2>
               <input
@@ -287,79 +286,7 @@ const Login = () => {
                 Forgot/Change Password?
               </button>
             </div>
-          )
-        ) : (
-          <div className="space-y-6">
-            <div className="text-center text-xl font-semibold text-gray-800">
-              Welcome, <span className="font-bold text-blue-600">{username}</span>
-            </div>
-
-            <input
-              type="text"
-              placeholder="Attendance note (optional)"
-              value={attendanceNote}
-              onChange={(e) => setAttendanceNote(e.target.value)}
-              className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-            />
-            <button
-              onClick={handleAddAttendance}
-              className="w-full py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-md shadow-md transition"
-            >
-              Register Attendance
-            </button>
-
-            <div>
-              <h2 className="text-gray-800 font-semibold mb-2">Attendance History:</h2>
-              <ul className="max-h-40 overflow-y-auto space-y-2 text-gray-700 list-disc list-inside p-2 border rounded-md">
-                {attendanceList.length === 0 ? (
-                  <li className="italic text-gray-400">No attendance history yet.</li>
-                ) : (
-                  attendanceList.map((item, idx) => (
-                    <li key={idx}>
-                      <span className="font-mono text-sm text-gray-500">{item.time}</span> — {item.note || "No notes"}
-                    </li>
-                  ))
-                )}
-              </ul>
-            </div>
-
-            <button
-              onClick={() => setShowChangePassword(!showChangePassword)}
-              className="w-full py-2 border border-gray-300 text-gray-700 font-semibold rounded-md hover:bg-gray-50 transition"
-            >
-              {showChangePassword ? "Close" : "Change Password"}
-            </button>
-
-            {showChangePassword && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                className="space-y-4 overflow-hidden"
-              >
-                <input
-                  type="password"
-                  placeholder="New password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-                />
-                <button
-                  onClick={handlePasswordChange}
-                  className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md transition"
-                >
-                  Save New Password
-                </button>
-              </motion.div>
-            )}
-
-            <button
-              onClick={handleLogout}
-              className="w-full py-2 border border-red-500 text-red-500 font-semibold rounded-md hover:bg-red-50 transition"
-            >
-              Logout
-            </button>
-          </div>
-        )}
+          )}
       </motion.div>
     </div>
   );
