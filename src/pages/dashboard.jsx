@@ -124,9 +124,9 @@ const Dashboard = () => {
                 </div>
 
                 {/* Chart */}
-                <div className="mb-8">
+                {/* <div className="mb-8">
                   <LineChart data={monthlyAttendanceData} />
-                </div>
+                </div> */}
 
                 {/* Recent Attendance */}
                 <Card title="Recent Attendance" className="mb-8">
