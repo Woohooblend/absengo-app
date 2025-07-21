@@ -1,7 +1,6 @@
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import Card from "../components/Card";
-import LineChart from "../components/Charts/LineChart";
 import { ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -54,11 +53,7 @@ const Dashboard = () => {
               </Card>
             </div>
 
-            {/* Chart */}
-            <div className="mb-8">
-              <LineChart />
-            </div>
-
+  
             {/* Recent Attendance */}
             <Card title="Recent Attendance" className="mb-8">
               <ul className="divide-y">
