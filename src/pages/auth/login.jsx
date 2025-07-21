@@ -37,7 +37,7 @@ const Login = () => {
     try {
       console.log(signupUsername, signupPassword)
       if (signupUsername && signupPassword) {
-        await register(signupUsername, "", signupPassword);
+        await register(signupUsername, `${signupUsername}@absengo.com`, signupPassword);
         // Create new user with clean slate
         const newUser = {
           username: signupUsername,
