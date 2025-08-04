@@ -141,9 +141,12 @@ const Dashboard = () => {
                         if (sessionStart > now) {
                           status = "Not Started";
                           statusClass = "text-gray-500";
-                        } else if (item.checkInTime) {
+                        } else if (item.checkInTime && item.checkOutTime) {
                           status = "Present";
                           statusClass = "text-green-600";
+                        } else if (item.checkInTime && !item.checkOutTime) {
+                          status = "In Progress";
+                          statusClass = "text-yellow-600";
                         } else {
                           status = "Absent";
                           statusClass = "text-red-600";
