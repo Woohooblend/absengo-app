@@ -161,7 +161,11 @@ const CheckinCheckout = () => {
     setShowModal(true);
 
     // Find the upcoming attendance record (first in sortedAttendanceList)
+
+    // 1. Get active class
     const upcoming = attendanceList.find(item => isCheckinAvailable(item) && !item.checkInTime);
+    
+    // 2. Check if we can check in 
     const canCheckinNow = isCheckinAvailable(upcoming) && !upcoming.checkInTime && isVerified;
     if (!upcoming) {
       setShowModal(false);
@@ -169,10 +173,16 @@ const CheckinCheckout = () => {
       setTimeout(() => setAutoNotif(""), 4000);
       return;
     }
+
+
     try {
+      // 3. Get check in time
       const now = new Date();
       const checkInTime = now.toTimeString().split(" ")[0]; // 'HH:MM:SS'
+
+      // 4. Call backend API
       await patchAttendance(upcoming.id, { checkInTime, attendanceStatus: true });
+
       setTimeout(() => {
         setShowModal(false);
         setSuccessMsg("Successfully checked in!");
