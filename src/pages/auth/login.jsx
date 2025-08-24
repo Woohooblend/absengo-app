@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { login, register } from "../../api/auth";
+import { changePassword, login, register } from "../../api/auth";
 
 const Login = () => {
   const [isSigningUp, setIsSigningUp] = useState(false);
@@ -159,20 +159,30 @@ const Login = () => {
     alert("Password successfully changed.");
   };
 
-  const handlePasswordChangeFromLogin = () => {
+  const handlePasswordChangeFromLogin = async() => {
+    const result = await changePassword(changeUser, changePass);
     if (!changeUser || !changePass) return;
     const updatedAccounts = storedAccounts.map((acc) =>
       acc.username === changeUser ? { ...acc, password: changePass } : acc
     );
-    if (storedAccounts.some(acc => acc.username === changeUser)) {
+    if(result[0]!=null){
       setStoredAccounts(updatedAccounts);
       setChangeSuccess("Password successfully changed. Please login.");
       setChangeUser("");
       setChangePass("");
       setTimeout(() => setShowChangePassword(false), 1500);
-    } else {
+    } else{
       setChangeSuccess("Username not found.");
     }
+    // if (storedAccounts.some(acc => acc.username === changeUser)) {
+    //   setStoredAccounts(updatedAccounts);
+    //   setChangeSuccess("Password successfully changed. Please login.");
+    //   setChangeUser("");
+    //   setChangePass("");
+    //   setTimeout(() => setShowChangePassword(false), 1500);
+    // } else {
+    //   setChangeSuccess("Username not found.");
+    // }
   };
 
   return (
